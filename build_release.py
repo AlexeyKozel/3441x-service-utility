@@ -15,6 +15,7 @@ TOP_LEVEL_FILES = (
     "README.md",
     "SAFETY.md",
     "CHANGELOG.md",
+    "LICENSE",
     "requirements-live.txt",
     "run_cli.bat",
     "run_gui.bat",

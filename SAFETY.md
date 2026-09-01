@@ -26,4 +26,4 @@ When the upload protocol reports completion, follow the prompt and manually powe
 
 Backups may contain instrument-specific serial, configuration, or calibration-related data. Treat them as sensitive device records and do not publish them. Never restore data from a different physical instrument unless you fully understand the consequences.
 
-There is no warranty. You assume all risk associated with instrument damage, lost calibration, lost data, or unsafe behavior.
+The software is provided without warranty. Use it entirely at your own risk. The author accepts no responsibility for bricked or otherwise damaged equipment, lost calibration, lost data, or unsafe behavior.

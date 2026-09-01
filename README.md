@@ -5,7 +5,7 @@ An unofficial service and recovery utility for Agilent/Keysight 34410A and 34411
 The current public release is **v1.0.0-rc12**. It provides a Windows GUI and a console interface for diagnostic reads, backups, offline package inspection, boot-identity maintenance, and controlled upload of original APP images.
 
 > [!WARNING]
-> This software can write persistent instrument storage and firmware. A failed operation or power loss can leave the instrument unusable. Read [SAFETY.md](SAFETY.md) before enabling any write operation.
+> This software can write persistent instrument storage and firmware. A failed operation or power loss can brick the instrument. Use it entirely at your own risk. The author accepts no responsibility for damaged equipment, data loss, or calibration issues. Read [SAFETY.md](SAFETY.md) before enabling any write operation.
 
 ## Features
 
@@ -80,3 +80,7 @@ The command creates a versioned ZIP and `SHA256SUMS.txt` under `dist/v1.0.0-rc12
 RC12 is a hardware-validation release. A successful APP upload and manual power-cycle boot have been observed on real hardware, but this is not a warranty of safety or compatibility with every instrument state.
 
 This project is not affiliated with or endorsed by Keysight Technologies, Agilent Technologies, or Hewlett-Packard.
+
+## License
+
+The source code is available under the [MIT License](LICENSE). Vendor firmware, updater packages, instrument dumps, and calibration data are not included and are not licensed by this project.
