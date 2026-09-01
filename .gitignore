@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+build/
+dist/
+3441x Service Utility Backups/
+*.log
+*.bin
+*.xs
+*.zip
