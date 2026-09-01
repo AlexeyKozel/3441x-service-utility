@@ -19,6 +19,8 @@ class ProgressTests(unittest.TestCase):
         self.assertIn('orient="horizontal", command=self.output.xview', source)
         self.assertIn("yscrollcommand=output_scroll_y.set", source)
         self.assertIn("xscrollcommand=output_scroll_x.set", source)
+        self.assertIn('"warning", foreground="#B00020"', source)
+        self.assertIn('self.events.put(("warning", result["warning"]))', source)
 
     def test_read_memory_reports_monotonic_byte_progress(self):
         class FakeInstrument:

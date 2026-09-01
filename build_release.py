@@ -7,8 +7,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "v1.0.0-rc11"
-ARCHIVE_STEM = "3441x_service_utility_v1_0_rc11"
+VERSION = "v1.0.0-rc12"
+ARCHIVE_STEM = "3441x_service_utility_v1_0_rc12"
 TOP_LEVEL_FILES = (
     "3441x_service_utility.py",
     "3441x_service_utility_gui.pyw",

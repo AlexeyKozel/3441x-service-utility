@@ -4,7 +4,7 @@ The original 3441x updater has distinct completion paths for `instrumentimage` a
 
 For an APP `instrumentimage`, the native path displays a power-cycle request after the image has been transferred. It does not issue `:diag:reboot`. The explicit reboot command belongs to the separate `updateimage` path.
 
-RC11 preserves that distinction:
+The utility preserves that distinction:
 
 1. Validate the `.xs` structure, image type, model, and checksums.
 2. Transfer every block exactly once.

@@ -2,7 +2,7 @@
 
 An unofficial service and recovery utility for Agilent/Keysight 34410A and 34411A digital multimeters.
 
-The current public release is **v1.0.0-rc11**. It provides a Windows GUI and a console interface for diagnostic reads, backups, offline package inspection, boot-identity maintenance, and controlled upload of original APP images.
+The current public release is **v1.0.0-rc12**. It provides a Windows GUI and a console interface for diagnostic reads, backups, offline package inspection, boot-identity maintenance, and controlled upload of original APP images.
 
 > [!WARNING]
 > This software can write persistent instrument storage and firmware. A failed operation or power loss can leave the instrument unusable. Read [SAFETY.md](SAFETY.md) before enabling any write operation.
@@ -73,10 +73,10 @@ Some evidence-bound tests are skipped when the private research artifacts are no
 py -X utf8 build_release.py
 ```
 
-The command creates a versioned ZIP and `SHA256SUMS.txt` under `dist/v1.0.0-rc11`.
+The command creates a versioned ZIP and `SHA256SUMS.txt` under `dist/v1.0.0-rc12`.
 
 ## Project status
 
-RC11 is a hardware-validation release. A successful APP upload and manual power-cycle boot have been observed on real hardware, but this is not a warranty of safety or compatibility with every instrument state.
+RC12 is a hardware-validation release. A successful APP upload and manual power-cycle boot have been observed on real hardware, but this is not a warranty of safety or compatibility with every instrument state.
 
 This project is not affiliated with or endorsed by Keysight Technologies, Agilent Technologies, or Hewlett-Packard.

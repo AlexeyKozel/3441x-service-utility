@@ -15,6 +15,11 @@ from utility3441x import (  # noqa: E402
     LIVE_IDENTITY_WRITE_ENABLED,
 )
 from utility3441x.cli import build_parser  # noqa: E402
+from utility3441x.instrument import (  # noqa: E402
+    VisaInstrument,
+    infer_recovery_model,
+    parse_firmware_revisions,
+)
 from utility3441x.offline import (  # noqa: E402
     SCHEMA45_BODY_BYTES,
     decode_schema45_body,
@@ -24,7 +29,66 @@ from utility3441x.offline import (  # noqa: E402
 
 
 class OfflineAndSafetyTests(unittest.TestCase):
-    def test_rc11_enables_bounded_identity_and_app_writes(self):
+    @staticmethod
+    def _diagnostics_for(
+        app_model: str,
+        instruction: int,
+        firmware: str = "2.43-2.40-0.09-46-09",
+    ) -> dict[str, object]:
+        class FakeInstrument:
+            @staticmethod
+            def identity() -> dict[str, str]:
+                return {
+                    "manufacturer": "Agilent Technologies",
+                    "model": app_model,
+                    "serial": "TEST",
+                    "firmware": firmware,
+                    "raw": f"Agilent Technologies,{app_model},TEST,{firmware}",
+                }
+
+            @staticmethod
+            def query_text(_command: str) -> str:
+                return "0"
+
+            @staticmethod
+            def read_memory(_address: int, _size: int) -> bytes:
+                return instruction.to_bytes(4, "big")
+
+        return VisaInstrument.diagnostics(FakeInstrument())
+
+    def test_diagnostics_warns_when_app_and_boot_personality_differ(self):
+        report = self._diagnostics_for("34410A", 0x3860B643)
+        self.assertEqual(report["bootPersonalityModel"], "34411A")
+        self.assertIn("incomplete identity conversion", report["warning"])
+        self.assertIn("original 34411A APP image", report["warning"])
+
+    def test_diagnostics_warns_for_completed_conversion_from_recovery_revision(self):
+        report = self._diagnostics_for("34411A", 0x3860B643)
+        self.assertEqual(report["appRevision"], "2.43")
+        self.assertEqual(report["recoveryRevision"], "2.40")
+        self.assertEqual(report["recoveryModelInference"], "34410A")
+        self.assertIn("converted from 34410A to 34411A", report["warning"])
+
+    def test_diagnostics_does_not_warn_for_matching_native_model(self):
+        report = self._diagnostics_for("34410A", 0x3860235A)
+        self.assertNotIn("warning", report)
+
+    def test_ambiguous_recovery_revision_is_not_used_as_conversion_proof(self):
+        report = self._diagnostics_for(
+            "34411A", 0x3860B643, firmware="2.43-2.35-0.09-46-09"
+        )
+        self.assertIsNone(report["recoveryModelInference"])
+        self.assertNotIn("warning", report)
+
+    def test_firmware_revision_parser_and_fail_closed_inference(self):
+        self.assertEqual(
+            parse_firmware_revisions("2.43-2.40-0.09-46-09"), ("2.43", "2.40")
+        )
+        self.assertEqual(parse_firmware_revisions("unexpected"), (None, None))
+        self.assertEqual(infer_recovery_model("2.40"), "34410A")
+        self.assertIsNone(infer_recovery_model("2.35"))
+
+    def test_rc12_enables_bounded_identity_and_app_writes(self):
         self.assertFalse(LIVE_FIRMWARE_WRITE_ENABLED)
         self.assertTrue(LIVE_APP_IMAGE_WRITE_ENABLED)
         self.assertTrue(LIVE_IDENTITY_WRITE_ENABLED)

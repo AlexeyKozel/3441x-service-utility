@@ -60,7 +60,7 @@ def _format_eta(seconds: float | None) -> str:
 class ServiceUtilityGui(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("3441x Service Utility 1.0 RC11 Hardware Validation")
+        self.title("3441x Service Utility 1.0 RC12 Hardware Validation")
         self.geometry("1050x760")
         self.events: queue.Queue[tuple[str, object]] = queue.Queue()
         self.cli = Path(__file__).resolve().parents[1] / "3441x_service_utility.py"
@@ -161,7 +161,7 @@ class ServiceUtilityGui(tk.Tk):
         ttk.Label(
             identity,
             text=(
-                "RC11 hardware-validation mode: identity writing and APP upload are "
+                "RC12 hardware-validation mode: identity writing and APP upload are "
                 "enabled, while general Recovery upload remains blocked. Review the "
                 "hash-bound plan in the Yes/No confirmation before proceeding."
             ),
@@ -202,6 +202,9 @@ class ServiceUtilityGui(tk.Tk):
             yscrollcommand=output_scroll_y.set,
             xscrollcommand=output_scroll_x.set,
         )
+        self.output.tag_configure(
+            "warning", foreground="#B00020", font=("TkDefaultFont", 10, "bold")
+        )
         self.output.grid(row=0, column=0, sticky="nsew")
         output_scroll_y.grid(row=0, column=1, sticky="ns")
         output_scroll_x.grid(row=1, column=0, sticky="ew")
@@ -212,6 +215,9 @@ class ServiceUtilityGui(tk.Tk):
                 kind, payload = self.events.get_nowait()
                 if kind == "output":
                     self.output.insert("end", str(payload) + "\n")
+                    self.output.see("end")
+                elif kind == "warning":
+                    self.output.insert("end", str(payload) + "\n", "warning")
                     self.output.see("end")
                 elif kind == "error":
                     self.output.insert("end", "ERROR: " + str(payload) + "\n")
@@ -295,6 +301,8 @@ class ServiceUtilityGui(tk.Tk):
                 result = function()
                 if result is not None:
                     self.events.put(("output", json.dumps(result, ensure_ascii=False, indent=2, default=str)))
+                    if isinstance(result, dict) and isinstance(result.get("warning"), str):
+                        self.events.put(("warning", result["warning"]))
                 self.events.put(("done", {"label": label, "success": True}))
             except Exception as exc:
                 self.events.put(("error", str(exc)))

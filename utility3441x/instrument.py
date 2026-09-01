@@ -10,7 +10,14 @@ from pathlib import Path
 from typing import Callable
 
 from .identity import FreshInstrumentSnapshot, FreshSa96Snapshot, REC_BASE, SA96_SIZE
-from .offline import NOR_BASE, NOR_END, NOR_SIZE, inspect_recovery_bytes, parse_cal_payload
+from .offline import (
+    KNOWN_REC_DECOMP,
+    NOR_BASE,
+    NOR_END,
+    NOR_SIZE,
+    inspect_recovery_bytes,
+    parse_cal_payload,
+)
 
 
 PROBE_ADDRESS = 0xFFE0230C
@@ -51,6 +58,24 @@ def parse_idn(text: str) -> dict[str, str]:
         "firmware": fields[3],
         "raw": text.strip(),
     }
+
+
+def parse_firmware_revisions(text: str) -> tuple[str | None, str | None]:
+    match = re.match(r"^([0-9]+[.][0-9]+)-([0-9]+[.][0-9]+)(?:-|$)", text.strip())
+    if match is None:
+        return None, None
+    return match.group(1), match.group(2)
+
+
+def infer_recovery_model(revision: str | None) -> str | None:
+    if revision is None:
+        return None
+    models = {
+        model
+        for model, known_revision in KNOWN_REC_DECOMP.values()
+        if known_revision == revision
+    }
+    return next(iter(models)) if len(models) == 1 else None
 
 
 class VisaInstrument:
@@ -143,12 +168,40 @@ class VisaInstrument:
         probe = self.read_memory(PROBE_ADDRESS, 4)
         instruction = int.from_bytes(probe, "big")
         personality = {0x3860235A: "34410A", 0x3860B643: "34411A"}.get(instruction)
-        return {
+        app_revision, recovery_revision = parse_firmware_revisions(identity["firmware"])
+        recovery_model = infer_recovery_model(recovery_revision)
+        report: dict[str, object] = {
             "identity": identity,
             "diagnostics": values,
+            "appRevision": app_revision,
+            "recoveryRevision": recovery_revision,
+            "recoveryModelInference": recovery_model,
             "bootPersonalityInstruction": f"0x{instruction:08X}",
             "bootPersonalityModel": personality,
         }
+        app_model = identity["model"]
+        if (
+            app_model in {"34410A", "34411A"}
+            and personality in {"34410A", "34411A"}
+            and app_model != personality
+        ):
+            report["warning"] = (
+                f"WARNING: The APP identity reports {app_model}, but the SA96 boot "
+                f"personality reports {personality}. This may indicate an incomplete "
+                f"identity conversion. Upload the original {personality} APP image "
+                "before normal use."
+            )
+        elif (
+            app_model in {"34410A", "34411A"}
+            and recovery_model in {"34410A", "34411A"}
+            and app_model != recovery_model
+        ):
+            report["warning"] = (
+                f"WARNING: This instrument appears to have been converted from "
+                f"{recovery_model} to {app_model}. The Recovery firmware remains "
+                f"{recovery_model} revision {recovery_revision}."
+            )
+        return report
 
     def read_memory(
         self,
