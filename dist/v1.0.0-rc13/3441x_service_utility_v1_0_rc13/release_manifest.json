@@ -1,0 +1,120 @@
+{
+  "release": "v1.0.0-rc13",
+  "files": [
+    {
+      "path": "3441x_service_utility.py",
+      "size": 92,
+      "sha256": "e2c91e4681e06aab7b71b4792e2d4878bfe840e5a250404d9b01cb469d8c16d2"
+    },
+    {
+      "path": "3441x_service_utility_gui.pyw",
+      "size": 74,
+      "sha256": "f8d6b70f61cd332d9007f8387b3e77e479a404b5b68050b1520368f7a9836404"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "size": 1748,
+      "sha256": "980dcaa1fa35b20f6729128cae177830561d9136eaa1d3d136a467db5ee1948a"
+    },
+    {
+      "path": "docs/NATIVE_APP_COMPLETION.md",
+      "size": 791,
+      "sha256": "db43eb1cf055019575e3e5812375458148491b42bdb88eff898fea6d0c2bbea3"
+    },
+    {
+      "path": "LICENSE",
+      "size": 1069,
+      "sha256": "557ed10fe4d052bafdf8488704f5e428adb3567c468af121a4f544a9e2db1c53"
+    },
+    {
+      "path": "README.md",
+      "size": 4016,
+      "sha256": "0861e3efeb8b553aac650278c1aedb272abd926ba2366cd3902ca8f94bd95f09"
+    },
+    {
+      "path": "requirements-live.txt",
+      "size": 16,
+      "sha256": "13eeb7468a3fa359b0ccdb04e6701e03fab0a48cc5af5769b2ae72fb2a0f1e7d"
+    },
+    {
+      "path": "run_cli.bat",
+      "size": 48,
+      "sha256": "2556456c38fe72b2dae38b1841b2822993c438fa14ef4d99e209c8b31eb569e0"
+    },
+    {
+      "path": "run_gui.bat",
+      "size": 60,
+      "sha256": "ba7410c2b06fc70b96cb81ca4a015a44b16efd4fba975216e1b1c5aa6f0d97ab"
+    },
+    {
+      "path": "SAFETY.md",
+      "size": 2011,
+      "sha256": "01ceff68ce111b7d49bc731f87e0677a20d277c2b57b29abf147cf26088f4a1a"
+    },
+    {
+      "path": "utility3441x/__init__.py",
+      "size": 594,
+      "sha256": "4d0e5a18c9f73fbca3e038e6d70c5ede306d6d7328785ca7339cd9cbc9cd24ca"
+    },
+    {
+      "path": "utility3441x/app_update.py",
+      "size": 2442,
+      "sha256": "5f6fd5465a9f0ba19c050a8c9e57d529267114e2cd1b921fc3c282ac11236b8a"
+    },
+    {
+      "path": "utility3441x/backup.py",
+      "size": 4752,
+      "sha256": "555d59f0e4299dc97f86438c4676a40a0aa1601cd62508fe60b485f23d03a244"
+    },
+    {
+      "path": "utility3441x/cli.py",
+      "size": 17205,
+      "sha256": "646c624751eb07f19d971368d0fa264f50976689087307a891dafb405c121da2"
+    },
+    {
+      "path": "utility3441x/data/schema45_registry_snapshot.json",
+      "size": 1210234,
+      "sha256": "51bf2a467f1e36113a0136b7cf2c4e066499abbf673caeac5fbc637037281e2a"
+    },
+    {
+      "path": "utility3441x/flash_model.py",
+      "size": 6673,
+      "sha256": "54eff5f1264e5b9a83043ac6a6cdfd00f39d39a5bb92a981fe0af7b29f21305b"
+    },
+    {
+      "path": "utility3441x/gui.py",
+      "size": 26649,
+      "sha256": "cfb30c2ec5a961505dd7c9f74f4f545608c27a2c42563424ee1c7e9fbd955931"
+    },
+    {
+      "path": "utility3441x/identity.py",
+      "size": 17416,
+      "sha256": "f62ad31748db2e1d26b2bb2a7613a3dbd6f3a34daa79fa750b5874a5ce6cbcc8"
+    },
+    {
+      "path": "utility3441x/instrument.py",
+      "size": 14056,
+      "sha256": "44f785c1277f898ce1e758c5ce5590066063e7e73a9c5cf93908055f0f8959e6"
+    },
+    {
+      "path": "utility3441x/offline.py",
+      "size": 11052,
+      "sha256": "9ddc26bd6a99826e6c03cff52f26e3e32aed076206e5c0c14e64a149f5379680"
+    },
+    {
+      "path": "utility3441x/srecord.py",
+      "size": 9401,
+      "sha256": "df97b72ee3de881a051d71e7bec176bc9324fb0952a2079879df635585fb4cf2"
+    },
+    {
+      "path": "utility3441x/update_protocol.py",
+      "size": 12137,
+      "sha256": "f63caa55c2d8d4fd5b45a82d907d83adaced951f1d7627be2a74ce7aa98f3be7"
+    },
+    {
+      "path": "verify_release.py",
+      "size": 2090,
+      "sha256": "f4f3e3bceab04be6c3754358404439fbf8869ff55711dd7629feba57bcbbf827"
+    }
+  ]
+}

@@ -26,7 +26,7 @@ PROJECT = next(
 )
 
 
-@unittest.skipUnless(PROJECT is not None, "project evidence is unavailable")
+@unittest.skipUnless(PROJECT is not None, "project evidence недоступен")
 class RealNorSimulationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -100,7 +100,7 @@ class RealNorSimulationTests(unittest.TestCase):
         )
         control_data = self._s3_image(self.control)
         patch_data = self._s3_image(self.patch)
-        # Native packages intentionally do not transfer reserved bytes SA96+0x08..0x0F.
+        # Штатные packages намеренно не передают reserved bytes SA96+0x08..0x0F.
         self.assertEqual(plan.source_sa96[:8] + plan.source_sa96[16:], control_data)
         self.assertEqual(plan.target_sa96[:8] + plan.target_sa96[16:], patch_data)
         self.assertEqual(plan.changed_recovery_offsets, (2, 3, 0x230E, 0x230F))
@@ -140,7 +140,7 @@ class RealNorSimulationTests(unittest.TestCase):
             result.cpu_after[:logical_app_length], stock11_cpu[:logical_app_length]
         )
         self.assertEqual(after["app"]["sha256Logical"], stock11_report["app"]["sha256Logical"])
-        # PATCH changes the boot identity without replacing the complete embedded Recovery image.
+        # PATCH меняет boot identity, но не подменяет embedded Recovery целиком.
         self.assertEqual(after["embeddedRecovery"]["model"], "34410A")
 
     def test_official_34411_app_is_rejected_before_identity_switch(self):

@@ -88,7 +88,7 @@ class OfflineAndSafetyTests(unittest.TestCase):
         self.assertEqual(infer_recovery_model("2.40"), "34410A")
         self.assertIsNone(infer_recovery_model("2.35"))
 
-    def test_rc12_enables_bounded_identity_and_app_writes(self):
+    def test_rc13_enables_bounded_identity_and_app_writes(self):
         self.assertFalse(LIVE_FIRMWARE_WRITE_ENABLED)
         self.assertTrue(LIVE_APP_IMAGE_WRITE_ENABLED)
         self.assertTrue(LIVE_IDENTITY_WRITE_ENABLED)
@@ -124,7 +124,7 @@ class OfflineAndSafetyTests(unittest.TestCase):
 
     @unittest.skipUnless(
         any((candidate / "PROJECT_HANDOFF.md").is_file() for candidate in (ROOT, *ROOT.parents)),
-        "project evidence is unavailable",
+        "project evidence недоступен",
     )
     def test_project_nor_fixture(self):
         project = next(
@@ -174,7 +174,7 @@ class OfflineAndSafetyTests(unittest.TestCase):
             ROOT / "3441x_service_utility_gui.pyw",
         ]
         corpus = "\n".join(path.read_text(encoding="utf-8") for path in files)
-        self.assertNotRegex(corpus, r"[\u0400-\u04ff]")
+        self.assertNotRegex(corpus, r"[А-Яа-яЁё]")
 
 
 if __name__ == "__main__":

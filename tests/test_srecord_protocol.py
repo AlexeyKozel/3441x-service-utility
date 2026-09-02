@@ -58,7 +58,9 @@ class SRecordProtocolTests(unittest.TestCase):
         )
         self.assertEqual(result["lastPhase"], "manual_power_cycle_required")
         self.assertNotIn(":diag:reboot", transport.events)
-        self.assertEqual(transport.events.count("reconnect"), 2)
+        # One reconnect enters the APP loader. After END the factory updater
+        # immediately asks for a manual power cycle instead of reconnecting.
+        self.assertEqual(transport.events.count("reconnect"), 1)
 
     def test_live_app_gate_accepts_only_instrumentimage(self):
         app = parse_xs_bytes(
@@ -249,7 +251,7 @@ class SRecordProtocolTests(unittest.TestCase):
         self.assertEqual(result["blockSize"], 50000)
         self.assertEqual(result["checksum"], "305419896")
 
-    @unittest.skipUnless(EVIDENCE is not None, "project evidence is unavailable")
+    @unittest.skipUnless(EVIDENCE is not None, "project evidence недоступен")
     def test_official_34411_package(self):
         assert EVIDENCE is not None
         path = EVIDENCE / "agt34411_instrument_rev243.xs"
@@ -277,7 +279,7 @@ class SRecordProtocolTests(unittest.TestCase):
         self.assertTrue(blocks[0].wire_bytes.endswith(b"\n\n"))
         self.assertNotIn(b"\r", blocks[0].payload)
 
-    @unittest.skipUnless(EVIDENCE is not None, "project evidence is unavailable")
+    @unittest.skipUnless(EVIDENCE is not None, "project evidence недоступен")
     def test_native_sa96_control_package(self):
         assert EVIDENCE is not None
         package = load_xs(EVIDENCE / "34410A_boot_CONTROL_SA96_updateimage.xs")
@@ -290,7 +292,7 @@ class SRecordProtocolTests(unittest.TestCase):
         emulator = execute_emulated(package, 65536)
         self.assertEqual(emulator.events[-3:], ["checksum", "end", ":diag:reboot"])
 
-    @unittest.skipUnless(EVIDENCE is not None, "project evidence is unavailable")
+    @unittest.skipUnless(EVIDENCE is not None, "project evidence недоступен")
     def test_mutated_srecord_checksum_is_rejected(self):
         assert EVIDENCE is not None
         package = load_xs(EVIDENCE / "34410A_boot_CONTROL_SA96_updateimage.xs")
@@ -300,7 +302,7 @@ class SRecordProtocolTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "checksum"):
             parse_xs_bytes(bytes(raw))
 
-    @unittest.skipUnless(EVIDENCE is not None, "project evidence is unavailable")
+    @unittest.skipUnless(EVIDENCE is not None, "project evidence недоступен")
     def test_unsupported_update_method_is_rejected(self):
         assert EVIDENCE is not None
         package = load_xs(EVIDENCE / "34410A_boot_CONTROL_SA96_updateimage.xs")
@@ -308,7 +310,7 @@ class SRecordProtocolTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "update method"):
             parse_xs_bytes(raw)
 
-    @unittest.skipUnless(EVIDENCE is not None, "project evidence is unavailable")
+    @unittest.skipUnless(EVIDENCE is not None, "project evidence недоступен")
     def test_emulator_rejects_byte_mutation(self):
         assert EVIDENCE is not None
         package = load_xs(EVIDENCE / "34410A_boot_CONTROL_SA96_updateimage.xs")

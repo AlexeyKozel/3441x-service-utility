@@ -145,7 +145,9 @@ class IdentityPlanTests(unittest.TestCase):
                 self.reconnects += 1
 
             def identity(self):
-                return {"model": "34411A", "serial": "MY00000001"}
+                # The old APP keeps reporting the source model even though the
+                # programmed SA96 boot personality is already the target.
+                return {"model": "34410A", "serial": "MY00000001"}
 
             def write_text(self, command):
                 self.writes.append(command)
@@ -158,6 +160,9 @@ class IdentityPlanTests(unittest.TestCase):
         self.assertEqual(result["rebootMode"], "automatic")
         self.assertTrue(result["initialReadbackInterrupted"])
         self.assertTrue(result["postEndSa96ReadbackVerified"])
+        self.assertTrue(result["appIdentityPending"])
+        self.assertEqual(result["requiredAppModel"], "34411A")
+        self.assertIn("34411A APP image", result["nextAction"])
 
     def test_explicit_reboot_is_used_when_instrument_is_still_source_model(self):
         plan = build_identity_write_plan(snapshot(), "34411A")
@@ -179,7 +184,6 @@ class IdentityPlanTests(unittest.TestCase):
 
             def write_text(self, command):
                 self.writes.append(command)
-                self.model = "34411A"
 
         instrument = ExplicitRebootInstrument()
         result = complete_identity_switch_after_end(instrument, plan)
@@ -187,6 +191,29 @@ class IdentityPlanTests(unittest.TestCase):
         self.assertEqual(instrument.reconnects, 1)
         self.assertEqual(result["rebootMode"], "explicit")
         self.assertFalse(result["initialReadbackInterrupted"])
+        self.assertTrue(result["appIdentityPending"])
+        self.assertEqual(result["identityAfter"]["model"], "34410A")
+
+    def test_target_app_identity_after_reboot_is_also_accepted(self):
+        plan = build_identity_write_plan(snapshot(), "34411A")
+
+        class TargetAppInstrument:
+            def read_memory(self, address, size, *, batch_words=16, progress=None):
+                return plan.target_sa96
+
+            def reconnect(self):
+                raise AssertionError("target APP identity already proves automatic reboot")
+
+            def identity(self):
+                return {"model": "34411A", "serial": "MY00000001"}
+
+            def write_text(self, command):
+                raise AssertionError("an additional reboot must not be sent")
+
+        result = complete_identity_switch_after_end(TargetAppInstrument(), plan)
+        self.assertEqual(result["rebootMode"], "automatic")
+        self.assertFalse(result["appIdentityPending"])
+        self.assertIsNone(result["requiredAppModel"])
 
     def test_mismatch_after_automatic_reboot_blocks_completion(self):
         plan = build_identity_write_plan(snapshot(), "34411A")

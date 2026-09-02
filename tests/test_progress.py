@@ -42,6 +42,69 @@ class ProgressTests(unittest.TestCase):
         self.assertEqual(events[-1], (512, 512))
         self.assertEqual(events, sorted(events))
 
+    def test_updater_exchange_matches_single_bounded_factory_read(self):
+        class VisaLibrary:
+            def __init__(self):
+                self.reads = []
+
+            def read(self, session, size):
+                self.reads.append((session, size))
+                return b"0\n", object()
+
+        class Resource:
+            def __init__(self):
+                self.timeout = 30_000
+                self.session = 123
+                self.visalib = VisaLibrary()
+                self.writes = []
+
+            def write_raw(self, payload):
+                self.writes.append(payload)
+                return len(payload)
+
+            def read_raw(self):
+                raise AssertionError("exchange_raw must not use PyVISA read_raw")
+
+        instrument = object.__new__(VisaInstrument)
+        instrument._inst = Resource()
+        instrument._factory_block_timeout_active = False
+
+        self.assertEqual(instrument.exchange_raw(b"frame\n"), "0")
+        self.assertEqual(instrument._inst.timeout, 5_000)
+        self.assertEqual(instrument._inst.visalib.reads, [(123, 100)])
+        self.assertEqual(instrument._inst.writes, [b"frame\n"])
+
+        self.assertEqual(instrument.exchange_raw(b"next\n"), "0")
+        self.assertEqual(
+            instrument._inst.visalib.reads,
+            [(123, 100), (123, 100)],
+        )
+
+    def test_updater_short_write_is_not_read_or_retried(self):
+        class VisaLibrary:
+            reads = 0
+
+            def read(self, session, size):
+                self.reads += 1
+                return b"0\n", object()
+
+        class Resource:
+            timeout = 30_000
+            session = 123
+            visalib = VisaLibrary()
+
+            @staticmethod
+            def write_raw(payload):
+                return len(payload) - 1
+
+        instrument = object.__new__(VisaInstrument)
+        instrument._inst = Resource()
+        instrument._factory_block_timeout_active = False
+
+        with self.assertRaisesRegex(RuntimeError, "ambiguous short write"):
+            instrument.exchange_raw(b"frame\n")
+        self.assertEqual(instrument._inst.visalib.reads, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
