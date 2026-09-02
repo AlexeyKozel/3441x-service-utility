@@ -53,6 +53,23 @@ def parse_idn(text: str) -> dict[str, str]:
     fields = [field.strip() for field in text.strip().split(",")]
     if len(fields) < 4:
         raise ValueError(f"unexpected *IDN? reply {text!r}")
+    if ";" in text:
+        # A semicolon separates concatenated SCPI responses and never appears
+        # in *IDN?. Its presence means this reply carries someone else's data.
+        # A read that dies mid-query leaves its remaining values queued in the
+        # instrument, and the next session's first query collects them. Since
+        # *IDN? is parsed by splitting on commas, a comma-free tail is not
+        # rejected -- it is absorbed whole into the firmware field. Observed as
+        # 32 stale DIAG:PEEK values stored as the firmware revision of a
+        # service backup, which the manifest then hashed as good content.
+        #
+        # This catches the multi-value tail a failed batched read leaves. A
+        # single appended value carries no semicolon and is not distinguishable
+        # here.
+        raise ValueError(
+            "*IDN? reply contains concatenated response data, so the "
+            f"instrument's output queue was not empty: {text!r}"
+        )
     return {
         "manufacturer": fields[0],
         "model": fields[1],
@@ -239,6 +256,10 @@ class VisaInstrument:
             response = self.query_text(compose_peek_query(cursor, count))
             parts = [part.strip() for part in response.split(";") if part.strip()]
             if len(parts) != count:
+                # A short reply means the rest of this batch is still queued in
+                # the instrument. Leaving it there poisons whoever reads next,
+                # including a later session: see parse_idn.
+                self._discard_pending()
                 raise RuntimeError(
                     f"DIAG:PEEK cardinality {len(parts)} instead of {count} at 0x{cursor:08X}"
                 )
@@ -264,6 +285,20 @@ class VisaInstrument:
         if recovery[:16] != header:
             raise RuntimeError("Recovery header changed while it was being read")
         return recovery
+
+    def _discard_pending(self) -> None:
+        """Clear the device so a failed read cannot poison the next reader.
+
+        Best-effort by design: this runs while an error is already being
+        raised, and failing to tidy up must not replace the real diagnosis
+        with a cleanup error. A caller that duck-types this class without a
+        VISA handle is tolerated for the same reason.
+        """
+
+        try:
+            self._inst.clear()
+        except Exception:
+            pass
 
     def query_binary_block(self, command: str) -> bytes:
         old_termination = self._inst.read_termination
