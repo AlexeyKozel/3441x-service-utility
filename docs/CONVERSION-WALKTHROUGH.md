@@ -216,9 +216,9 @@ identity switch does not change — the 34410A image does not contain the string
 
 Select the `.xs` matching the personality you just set, and check its SHA-256.
 The two packages look identical in this window apart from one character in the
-filename:
-
-![The same tab with the 34410A package](images/03b-firmware-tab-select-34410a-xs.png)
+filename, and nothing else in the tool distinguishes them — so the filename and
+the hash are your only confirmation of which direction you are about to send the
+instrument.
 
 **Dry-run transcript** prints the exact command sequence and writes nothing —
 worth pressing once before your first real upload.
