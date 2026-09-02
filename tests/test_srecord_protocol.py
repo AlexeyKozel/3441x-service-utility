@@ -58,9 +58,13 @@ class SRecordProtocolTests(unittest.TestCase):
         )
         self.assertEqual(result["lastPhase"], "manual_power_cycle_required")
         self.assertNotIn(":diag:reboot", transport.events)
-        # One reconnect enters the APP loader. After END the factory updater
-        # immediately asks for a manual power cycle instead of reconnecting.
-        self.assertEqual(transport.events.count("reconnect"), 1)
+        # No reboot into the loader, and therefore no reconnect. The factory
+        # updater's caspreRamBased path sends START to whatever firmware is
+        # already running: 0x40b9b8 jumps past the only ":diag:upd:reb" site in
+        # the program. After END it asks for a manual power cycle rather than
+        # reconnecting.
+        self.assertNotIn(":diag:upd:reb", transport.events)
+        self.assertEqual(transport.events.count("reconnect"), 0)
 
     def test_live_app_gate_accepts_only_instrumentimage(self):
         app = parse_xs_bytes(

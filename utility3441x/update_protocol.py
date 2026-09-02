@@ -127,13 +127,6 @@ def parse_nonnegative_scpi_integer(response: str, *, phase: str) -> int:
 def dry_run_transcript(package: XsPackage, block_size: int) -> list[dict[str, object]]:
     blocks = build_update_blocks(package, block_size)
     events: list[dict[str, object]] = []
-    if package.image_type == "instrumentimage":
-        events.extend(
-            [
-                {"phase": "enter_loader", "command": ":diag:upd:reb"},
-                {"phase": "reconnect", "expected_identity": f"loader_{package.model}"},
-            ]
-        )
     events.append({"phase": "start", "command": selector_start_command(package)})
     events.append(
         {
@@ -223,9 +216,6 @@ class FactoryProtocolEmulator:
 
 def execute_emulated(package: XsPackage, block_size: int) -> FactoryProtocolEmulator:
     transport = FactoryProtocolEmulator(package, block_size)
-    if package.image_type == "instrumentimage":
-        transport.write_text(":diag:upd:reb")
-        transport.reconnect()
     parse_zero_status(
         transport.query_text(selector_start_command(package)), phase="start"
     )
@@ -273,10 +263,23 @@ def execute_update(
     completed_blocks = 0
     phase = "preflight"
     try:
-        if package.image_type == "instrumentimage":
-            phase = "enter_loader"
-            transport.write_text(":diag:upd:reb")
-            transport.reconnect()
+        # No loader reboot, and no reconnect.
+        #
+        # FirmwareUpdateUtility B.01.09 dispatches on %updatemethod at
+        # 0x40b0e7. The caspreRamBased branch tests the RAM-based flag at
+        # 0x40b9b8 and jumps straight to the selector/START, skipping the block
+        # that holds the only reference to ":diag:upd:reb" anywhere in the
+        # program (0x4029a3, reached solely from 0x402988). The OEM therefore
+        # sends START to whatever firmware is already running.
+        #
+        # Even on its non-RAM-based path it first checks whether the identity
+        # already contains "loader" (0x40296e) and does nothing if so: it never
+        # reboots a loader that is already in charge.
+        #
+        # srecord.py rejects every %updatemethod except caspreRamBased, so for
+        # this tool the reboot is unconditionally wrong. Sending it -- and then
+        # closing and reopening the VISA session -- is the one difference that
+        # changes which firmware receives the transfer.
         phase = "start"
         parse_zero_status(
             transport.query_text(selector_start_command(package)), phase=phase
