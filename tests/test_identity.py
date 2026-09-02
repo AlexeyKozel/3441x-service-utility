@@ -247,3 +247,107 @@ class IdentityPlanTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class IdentityLoaderOutcomeTests(unittest.TestCase):
+    """Downgrading stops the instrument in the loader, and that is a success.
+
+    The 34411A APP checks the personality at startup; the 34410A APP does not.
+    So switching 34411A -> 34410A means the running APP refuses to boot and
+    lands in the loader. Reaching the loader is evidence the write took effect,
+    not evidence it failed.
+    """
+
+    def test_loader_after_reboot_is_a_successful_outcome(self):
+        plan = build_identity_write_plan(snapshot(), "34411A")
+
+        class StopsInLoader:
+            def __init__(self):
+                self.reads = 0
+
+            def read_memory(self, address, size, *, batch_words=16, progress=None):
+                self.reads += 1
+                return plan.target_sa96
+
+            def reconnect(self):
+                pass
+
+            def identity(self):
+                return {"model": "loader_34410A", "serial": "MY00000001"}
+
+            def write_text(self, command):
+                pass
+
+        instrument = StopsInLoader()
+        result = complete_identity_switch_after_end(instrument, plan)
+        self.assertTrue(result["instrumentInLoader"])
+        self.assertTrue(result["postEndSa96ReadbackVerified"])
+        self.assertTrue(result["appIdentityPending"])
+        self.assertEqual(result["requiredAppModel"], "34411A")
+        self.assertIn("APP image", result["nextAction"])
+        # Already rebooted into the loader, and there is nothing else to boot
+        # into: a second reboot would be pointless.
+        self.assertEqual(result["rebootMode"], "automatic")
+        self.assertEqual(instrument.reads, 1)
+
+
+class PersonalitySwitchIsAlwaysPermittedTests(unittest.TestCase):
+    """Switching the boot personality must not depend on the installed APP.
+
+    Every conversion passes through a state where the APP and the personality
+    disagree, because an identity switch does not replace the APP. Refusing
+    that state stranded the operator: after switching, `*IDN?` still reported
+    the old model, so switching back was rejected and the only route out was a
+    full conversion plus a full reversal -- two APP uploads.
+
+    The hazard is real but different: a 34411A APP will not start on a 34410A
+    personality. That is a warning, not a veto.
+    """
+
+    @staticmethod
+    def _sa96_snapshot(sa96: bytes, app_model: str) -> FreshSa96Snapshot:
+        source = snapshot()
+        return FreshSa96Snapshot(
+            session_id=source.session_id,
+            resource=source.resource,
+            idn=source.idn,
+            serial=source.serial,
+            current_model=app_model,
+            app_revision=source.app_revision,
+            recovery_revision=source.recovery_revision,
+            sa96=sa96,
+            captured_at_utc=source.captured_at_utc,
+        )
+
+    def test_switch_back_is_allowed_when_app_still_reports_the_old_model(self):
+        # The state a conversion leaves behind: personality 34411A, APP 34410A.
+        forward = build_identity_write_plan(snapshot(), "34411A")
+        stuck = self._sa96_snapshot(forward.target_sa96, "34410A")
+        back = build_sa96_identity_write_plan(stuck, "34410A")
+        self.assertEqual(back.target_personality, 0x235A)
+        self.assertEqual(back.target_sa96, forward.source_sa96)   # exact reversal
+        self.assertIsNone(back.warning)          # 34410A APP starts on either
+
+    def test_downgrade_under_a_34411A_app_warns_that_it_will_not_start(self):
+        forward = build_identity_write_plan(snapshot(), "34411A")
+        converted = self._sa96_snapshot(forward.target_sa96, "34411A")
+        plan = build_sa96_identity_write_plan(converted, "34410A")
+        self.assertFalse(plan.resulting_state_starts)
+        self.assertIn("REFUSE TO START", plan.warning)
+        self.assertIn("34410A APP image", plan.warning)
+        self.assertFalse(plan.as_dict()["resultingStateStarts"])
+        self.assertTrue(plan.as_dict()["appAndPersonalityAgreedBefore"])
+
+    def test_upgrade_under_a_34410A_app_does_not_warn(self):
+        plan = build_identity_write_plan(snapshot(), "34411A")
+        self.assertTrue(plan.resulting_state_starts)
+        self.assertIsNone(plan.warning)
+        self.assertEqual(plan.as_dict()["installedAppModel"], "34410A")
+
+    def test_unrecognised_app_reports_unknown_rather_than_guessing(self):
+        from utility3441x.identity import app_starts_on_personality
+
+        self.assertIsNone(app_starts_on_personality("L4411A", "34410A"))
+        self.assertIsNone(app_starts_on_personality(None, "34410A"))
+        self.assertTrue(app_starts_on_personality("34410A", "34411A"))
+        self.assertFalse(app_starts_on_personality("34411A", "34410A"))

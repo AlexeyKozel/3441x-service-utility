@@ -586,15 +586,27 @@ class ServiceUtilityGui(tk.Tk):
                     )
 
                 plan_report = plan.as_dict()
+                # Report the BOOT PERSONALITY being changed and the installed
+                # APP separately. They are different things and are allowed to
+                # disagree; labelling the APP model as "Identity" hid exactly
+                # the case the warning below exists for.
                 confirmation = (
                     f"Instrument: {snapshot.serial}\n"
-                    f"Identity: {snapshot.current_model} -> {target}\n"
+                    f"Boot personality: {plan_report['sourceModel']} "
+                    f"({plan_report['sourcePersonality']}) -> {target} "
+                    f"({plan_report['targetPersonality']})\n"
+                    f"Installed APP: {plan_report['installedAppModel']}\n"
                     f"Source SA96 SHA-256: {plan_report['sourceSa96Sha256']}\n"
                     f"Target SA96 SHA-256: {plan_report['targetSa96Sha256']}\n"
                     f"XS SHA-256: {plan_report['packageSha256']}\n\n"
                     f"Original SA96 and the write plan were saved to:\n{folder}\n\n"
-                    "Proceed with one write attempt?"
                 )
+                if plan_report["warning"]:
+                    confirmation += f"WARNING\n{plan_report['warning']}\n\n"
+                    self.events.put(
+                        ("warning", f"WARNING: {plan_report['warning']}")
+                    )
+                confirmation += "Proceed with one write attempt?"
                 if not self._confirm_yes_no_from_worker(
                     "Confirm identity switch", confirmation
                 ):
