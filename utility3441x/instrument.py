@@ -354,13 +354,23 @@ def dump_nor(
             raise RuntimeError("resume tail does not match the current NOR")
     mode = "ab" if done else "wb"
     with output.open(mode) as stream:
+        # Count bytes since the last sync rather than testing `done` against a
+        # 64 KiB boundary: `batch_words * 2` need not divide 64 KiB, and when
+        # it does not the boundary is never hit and nothing is ever synced,
+        # which silently costs the resume file the durability it exists for.
+        since_sync = 0
         while done < NOR_SIZE:
             size = min(batch_words * 2, NOR_SIZE - done)
             block = instrument.read_memory(NOR_BASE + done, size, batch_words=batch_words)
             stream.write(block)
             done += len(block)
-            if done % 0x10000 == 0:
+            since_sync += len(block)
+            if since_sync >= 0x10000:
                 stream.flush()
                 os.fsync(stream.fileno())
+                since_sync = 0
             if progress:
                 progress(done, NOR_SIZE)
+        if since_sync:
+            stream.flush()
+            os.fsync(stream.fileno())

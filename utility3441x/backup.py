@@ -23,11 +23,22 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _fsync(stream) -> None:
+    stream.flush()
+    os.fsync(stream.fileno())
+
+
 def _write_json(path: Path, value: object) -> None:
-    path.write_text(
-        json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
-        encoding="utf-8",
-    )
+    text = json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
+    with path.open("w", encoding="utf-8") as stream:
+        stream.write(text)
+        _fsync(stream)
+
+
+def _write_bytes(path: Path, payload: bytes) -> None:
+    with path.open("wb") as stream:
+        stream.write(payload)
+        _fsync(stream)
 
 
 def create_service_backup(
@@ -66,7 +77,7 @@ def create_service_backup(
     register(diagnostics_path, "read-only diagnostic snapshot")
 
     calibration_path = folder / "calibration_current.bin"
-    calibration_path.write_bytes(calibration)
+    _write_bytes(calibration_path, calibration)
     register(calibration_path, "current CAL:DATA:ALL logical object")
     calibration_json = folder / "calibration_current.json"
     _write_json(calibration_json, calibration_report)
@@ -92,8 +103,6 @@ def create_service_backup(
     }
     manifest_path = folder / "manifest.json"
     _write_json(manifest_path, manifest)
-    with manifest_path.open("rb") as stream:
-        os.fsync(stream.fileno())
     return verify_service_backup(folder)
 
 
