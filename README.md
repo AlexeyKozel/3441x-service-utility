@@ -20,6 +20,13 @@ The current public release is **v1.0.0-rc13**. It provides a Windows GUI and a c
 
 The repository contains no firmware, updater packages, instrument dumps, calibration data, or vendor binaries.
 
+## Walkthrough
+
+[docs/CONVERSION-WALKTHROUGH.md](docs/CONVERSION-WALKTHROUGH.md) is an
+illustrated, step-by-step run of a complete boot-identity conversion and its
+reversal on real hardware, including which order to use in each direction, what
+the alarming-but-normal moments look like, and how to recover from the loader.
+
 ## Requirements
 
 - Windows 10 or later
