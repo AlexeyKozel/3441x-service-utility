@@ -88,6 +88,31 @@ class FreshSa96Snapshot:
             raise ValueError("SA96 snapshot must contain exactly 65536 bytes")
 
 
+# Which APP images validate the boot personality at startup.
+#
+#   34411A APP : reads 0x9000000A and requires 0xB643. On anything else it
+#                displays PLEASE LOAD / 34410 FIRMWARE and stops in the loader.
+#   34410A APP : contains no such check at all -- verified by searching both
+#                decompressed images for the comparison and for the message
+#                string. It starts on either personality.
+#
+# So switching personality is safe while a 34410A APP is installed, and leaves
+# the instrument unable to start while a 34411A APP is installed. That is a
+# reason to WARN, not a reason to refuse: passing through a state where the APP
+# and the personality disagree is unavoidable in any conversion, and refusing
+# it strands the operator with no way back.
+APP_VALIDATES_PERSONALITY = {"34410A": False, "34411A": True}
+
+
+def app_starts_on_personality(app_model: str | None, personality_model: str | None) -> bool | None:
+    """True/False if known, None if the APP image is unrecognised."""
+
+    validates = APP_VALIDATES_PERSONALITY.get(app_model or "")
+    if validates is None:
+        return None
+    return True if not validates else app_model == personality_model
+
+
 @dataclass(frozen=True)
 class IdentityWritePlan:
     snapshot: FreshInstrumentSnapshot | FreshSa96Snapshot
@@ -102,6 +127,35 @@ class IdentityWritePlan:
     changed_recovery_offsets: tuple[int, ...]
     checksum_policy: str
     full_recovery_checksum_verified: bool
+
+    @property
+    def installed_app_model(self) -> str:
+        return self.snapshot.current_model
+
+    @property
+    def resulting_state_starts(self) -> bool | None:
+        return app_starts_on_personality(self.installed_app_model, self.target_model)
+
+    @property
+    def warning(self) -> str | None:
+        starts = self.resulting_state_starts
+        if starts is None:
+            return (
+                f"The installed APP reports {self.installed_app_model}, which is "
+                "not a recognised 3441x APP image. Whether it will start on a "
+                f"{self.target_model} boot personality is unknown."
+            )
+        if starts:
+            return None
+        return (
+            f"After this switch the installed {self.installed_app_model} APP will "
+            f"REFUSE TO START on a {self.target_model} boot personality: it will "
+            f"display PLEASE LOAD / {self.target_model[:5]} FIRMWARE and stop in "
+            f"the loader. Upload the original {self.target_model} APP image to "
+            "finish. The instrument stays recoverable throughout -- the loader "
+            "is the mode that accepts a firmware load -- but it will not measure "
+            "until the APP is replaced."
+        )
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -127,6 +181,11 @@ class IdentityWritePlan:
             "originPolicy": "instrument-current-session-only",
             "checksumPolicy": self.checksum_policy,
             "fullRecoveryChecksumVerified": self.full_recovery_checksum_verified,
+            "installedAppModel": self.installed_app_model,
+            "appAndPersonalityAgreedBefore":
+                self.installed_app_model == MODEL_BY_VALUE[self.source_personality],
+            "resultingStateStarts": self.resulting_state_starts,
+            "warning": self.warning,
         }
 
 
@@ -207,8 +266,13 @@ def build_identity_write_plan(
     recovery = snapshot.recovery
     end_offset, _ = _validate_recovery(recovery)
     immediate_offset, source_value = _find_personality_writer(recovery, end_offset)
-    if MODEL_BY_VALUE[source_value] != snapshot.current_model:
-        raise ValueError("*IDN?/snapshot model does not match boot personality")
+    # The installed APP and the boot personality are allowed to disagree.
+    # Every conversion passes through exactly that state, because an identity
+    # switch does not replace the APP -- afterwards *IDN? still reports the old
+    # model. Refusing it stranded the operator: having switched, a switch back
+    # was rejected, and the only way out was a full conversion followed by a
+    # full reversal, two APP uploads. See IdentityWritePlan.warning, which says
+    # whether the resulting combination will start.
     target_value = PERSONALITY[target_model]
     if target_value == source_value:
         raise ValueError("the requested identity is already active")
@@ -275,8 +339,13 @@ def build_sa96_identity_write_plan(
     immediate_offset, source_value = _find_personality_writer(
         source_sa96, SA96_SIZE - 1
     )
-    if MODEL_BY_VALUE[source_value] != snapshot.current_model:
-        raise ValueError("*IDN?/snapshot model does not match boot personality")
+    # The installed APP and the boot personality are allowed to disagree.
+    # Every conversion passes through exactly that state, because an identity
+    # switch does not replace the APP -- afterwards *IDN? still reports the old
+    # model. Refusing it stranded the operator: having switched, a switch back
+    # was rejected, and the only way out was a full conversion followed by a
+    # full reversal, two APP uploads. See IdentityWritePlan.warning, which says
+    # whether the resulting combination will start.
     target_value = PERSONALITY[target_model]
     if target_value == source_value:
         raise ValueError("the requested identity is already active")
@@ -403,10 +472,23 @@ def complete_identity_switch_after_end(
         raise RuntimeError("Post-END instrument serial does not match the write plan")
 
     model_after = identity_after.get("model")
-    if model_after not in {source_model, plan.target_model}:
+    # A loader identity is a third valid outcome, not a failure. Writing SA96
+    # reboots the instrument, and if the installed APP validates the boot
+    # personality it refuses the new one: the 34411A APP requires 0xB643, so it
+    # displays PLEASE LOAD / 34410 FIRMWARE and stops in the loader. (The
+    # 34410A APP has no such check and simply starts.) A 34411A -> 34410A
+    # switch therefore legitimately ends with the instrument reporting
+    # `loader_34410A`, which is neither the source nor the target model.
+    #
+    # Reaching the loader is itself evidence the write took effect: the APP
+    # refuses only when it reads a personality that is not its own.
+    in_loader = str(model_after or "").startswith("loader_")
+    if not in_loader and model_after not in {source_model, plan.target_model}:
         raise RuntimeError("Post-END instrument model does not match the write plan")
 
-    if automatic_reboot_detected or model_after == plan.target_model:
+    if in_loader or automatic_reboot_detected or model_after == plan.target_model:
+        # In the loader case the instrument has already rebooted and there is
+        # nothing else for it to boot into. Do not issue a second reboot.
         reboot_mode = "automatic"
     else:
         report("Rebooting and reconnecting")
@@ -425,10 +507,17 @@ def complete_identity_switch_after_end(
         if model_after not in {source_model, plan.target_model}:
             raise RuntimeError("Post-reboot identity does not match the write plan")
 
-    app_identity_pending = model_after != plan.target_model
+    app_identity_pending = in_loader or model_after != plan.target_model
     if app_identity_pending:
         report(
             f"Boot identity verified; upload the original {plan.target_model} APP image"
+        )
+    if in_loader:
+        report(
+            "The installed APP refused the new boot personality and the loader "
+            "is now in charge. The instrument will not measure until the "
+            f"{plan.target_model} APP image is uploaded; it is recoverable, "
+            "because the loader is the mode that accepts a firmware load."
         )
 
     return {
@@ -437,6 +526,7 @@ def complete_identity_switch_after_end(
         "initialReadbackInterrupted": initial_error is not None,
         "initialReadbackError": initial_error,
         "postEndSa96ReadbackVerified": True,
+        "instrumentInLoader": in_loader,
         "appIdentityPending": app_identity_pending,
         "requiredAppModel": plan.target_model if app_identity_pending else None,
         "nextAction": (

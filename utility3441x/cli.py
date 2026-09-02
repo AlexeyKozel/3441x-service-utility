@@ -399,6 +399,8 @@ def main(argv: list[str] | None = None) -> int:
                 result["backupFolder"] = str(folder)
                 _print_json(result)
                 return 0
+            if plan.warning:
+                print(f"WARNING: {plan.warning}", file=sys.stderr)
             if not args.yes:
                 raise PermissionError(
                     "Identity switch is blocked. Review the saved write plan and pass --yes"

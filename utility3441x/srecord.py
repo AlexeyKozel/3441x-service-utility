@@ -71,12 +71,39 @@ def assert_app_image_package(package: XsPackage) -> None:
         )
 
 
+LOADER_MODEL_PREFIX = "loader_"
+
+
+def normalize_instrument_model(model: str | None) -> str | None:
+    """Map a loader identity onto the instrument model it belongs to.
+
+    A 34410A/34411A running its update loader reports, for example,
+    `loader_34410A` rather than `34410A`. An instrument reaches that state
+    without being asked to: an interrupted APP upload leaves it there with the
+    APP erased and revision `0.00`, and a boot personality the installed APP
+    rejects puts it there at power-on.
+
+    Both are exactly the situations where an upload has to be possible.
+    Treating `loader_<model>` as an unsupported model means the utility refuses
+    to talk to an instrument that has nothing else to boot -- including one its
+    own failed upload just created. The OEM updater accepts loader identities;
+    it lower-cases the reported model and searches it for "loader".
+    """
+
+    if model is None:
+        return None
+    if model.startswith(LOADER_MODEL_PREFIX):
+        return model[len(LOADER_MODEL_PREFIX):]
+    return model
+
+
 def assert_app_upload_preflight(
     package: XsPackage,
     instrument_identity: dict[str, str],
 ) -> None:
     assert_app_image_package(package)
-    if instrument_identity.get("model") not in LIVE_APP_MODELS:
+    model = normalize_instrument_model(instrument_identity.get("model"))
+    if model not in LIVE_APP_MODELS:
         raise PermissionError(
             "Live APP upload is limited to 34410A/34411A instruments"
         )
