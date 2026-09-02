@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import struct
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Protocol
@@ -127,6 +127,12 @@ class IdentityWritePlan:
     changed_recovery_offsets: tuple[int, ...]
     checksum_policy: str
     full_recovery_checksum_verified: bool
+    # Stamped when the plan is built, not when it is serialized. The plan JSON
+    # written before the write and the result JSON written after it describe
+    # the same plan, and must not disagree about when it was made.
+    created_at_utc: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
 
     @property
     def installed_app_model(self) -> str:
@@ -159,7 +165,7 @@ class IdentityWritePlan:
 
     def as_dict(self) -> dict[str, object]:
         return {
-            "createdAtUtc": datetime.now(timezone.utc).isoformat(),
+            "createdAtUtc": self.created_at_utc,
             "sessionId": self.snapshot.session_id,
             "resource": self.snapshot.resource,
             "idn": self.snapshot.idn,
@@ -395,6 +401,23 @@ def assert_fresh_readback_before_write(plan: IdentityWritePlan, current_sa96: by
         raise ValueError("fresh SA96 read-back has an invalid size")
     if current_sa96 != plan.source_sa96:
         raise RuntimeError("SA96 changed after plan creation; operation cancelled")
+
+
+def assert_package_matches_plan(plan: IdentityWritePlan, package_bytes: bytes) -> None:
+    """Bind the bytes about to be uploaded to the plan the operator approved.
+
+    The `.xs` is saved to the backup folder as evidence and reloaded from there
+    before the write, so the file is checked as well as the plan. Without this
+    the confirmation quotes `packageSha256` from the plan while the upload
+    sends whatever is on disk, and nothing compares the two.
+    """
+
+    if package_bytes != plan.package_bytes:
+        raise RuntimeError(
+            "the .xs package on disk does not match the approved write plan "
+            f"(plan {_sha256(plan.package_bytes)}, "
+            f"file {_sha256(package_bytes)}); the write is blocked"
+        )
 
 
 def assert_programmed_readback(plan: IdentityWritePlan, programmed_sa96: bytes) -> None:

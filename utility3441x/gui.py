@@ -10,6 +10,7 @@ import sys
 import threading
 import time
 import tkinter as tk
+import traceback
 from datetime import datetime
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
@@ -25,6 +26,7 @@ from .identity import (
     REC_BASE,
     SA96_SIZE,
     assert_fresh_readback_before_write,
+    assert_package_matches_plan,
     build_sa96_identity_write_plan,
     complete_identity_switch_after_end,
     default_backup_root,
@@ -72,7 +74,27 @@ class ServiceUtilityGui(tk.Tk):
         self.progress_stats = tk.StringVar(value="")
         self._busy = False
         self._build()
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.after(100, self._drain)
+
+    def _on_close(self) -> None:
+        """Refuse a silent exit while an operation is running.
+
+        Workers are daemon threads, so closing the window ends the process and
+        can cut a firmware or SA96 write off mid-block -- exactly the ambiguous
+        instrument state the rest of this tool is built to avoid.
+        """
+
+        if self._busy and not messagebox.askyesno(
+            "3441x Service Utility",
+            "An operation is still running.\n\n"
+            "Closing now can interrupt a write in progress and leave the "
+            "instrument in an unknown state. Close anyway?",
+            default="no",
+            icon="warning",
+        ):
+            return
+        self.destroy()
 
     def _build(self) -> None:
         top = ttk.Frame(self, padding=8)
@@ -260,7 +282,17 @@ class ServiceUtilityGui(tk.Tk):
                     self._busy = False
         except queue.Empty:
             pass
-        self.after(100, self._drain)
+        except Exception:
+            # A failing handler must never stop the pump. The reschedule below
+            # used to sit outside this try, so one exception ended the drain
+            # loop for good: progress froze, and a worker waiting in
+            # _confirm_yes_no_from_worker blocked forever on a dialog that
+            # could no longer be raised -- possibly between the plan and the
+            # write. Report it and keep draining; the remaining events are
+            # picked up on the next tick.
+            traceback.print_exc()
+        finally:
+            self.after(100, self._drain)
 
     def _progress_callback(self, label: str) -> Callable[[int, int], None]:
         started = time.monotonic()
@@ -617,13 +649,14 @@ class ServiceUtilityGui(tk.Tk):
                 if identity_now["serial"] != snapshot.serial or identity_now["model"] != snapshot.current_model:
                     raise RuntimeError("Instrument identity changed after preflight")
                 current_sector = instrument.read_memory(
-                    0xFFE00000,
-                    0x10000,
+                    REC_BASE,
+                    SA96_SIZE,
                     batch_words=64,
                     progress=self._progress_callback("Re-reading SA96 before write"),
                 )
                 assert_fresh_readback_before_write(plan, current_sector)
                 package = load_xs(folder / "identity_switch_native_sa96.xs")
+                assert_package_matches_plan(plan, package.raw)
                 update_result = execute_update(
                     instrument,
                     package,
