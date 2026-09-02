@@ -22,6 +22,7 @@ from .identity import (
     REC_BASE,
     SA96_SIZE,
     assert_fresh_readback_before_write,
+    assert_package_matches_plan,
     build_sa96_identity_write_plan,
     complete_identity_switch_after_end,
     default_backup_root,
@@ -409,13 +410,14 @@ def main(argv: list[str] | None = None) -> int:
             if identity_now["serial"] != snapshot.serial or identity_now["model"] != snapshot.current_model:
                 raise RuntimeError("Instrument identity changed after preflight")
             current_sector = instrument.read_memory(
-                0xFFE00000,
-                0x10000,
+                REC_BASE,
+                SA96_SIZE,
                 batch_words=64,
                 progress=CliProgress("Re-reading SA96 before write"),
             )
             assert_fresh_readback_before_write(plan, current_sector)
             package = load_xs(target_package)
+            assert_package_matches_plan(plan, package.raw)
             update_result = execute_update(
                 instrument,
                 package,
