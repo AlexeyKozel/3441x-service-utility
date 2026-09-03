@@ -121,12 +121,33 @@ class VisaInstrument:
         self._factory_block_timeout_active = False
 
     def close(self) -> None:
+        """Release the session. Teardown never fails the operation.
+
+        Both calls here can raise on a session whose event context died with
+        an instrument reboot -- pyvisa's close() runs before_close() ->
+        disable_event(), which the backend answers with VI_ERROR_INV_OBJECT.
+        Neither was guarded: the first propagated, and the second, in a
+        `finally`, replaced it. Either escaped the caller's `with` block after
+        the work was finished, so a completed and verified APP update was
+        reported to the operator as a failure and its result discarded.
+
+        There is nothing to retry and nothing to report: the session is gone
+        either way, which is the state close() is asked to reach. A failure
+        while releasing a session must never change the outcome of work that
+        has already succeeded.
+        """
+
         try:
             if self._inst is not None:
                 self._inst.close()
+        except Exception:
+            pass
         finally:
             self._inst = None
-            self._rm.close()
+            try:
+                self._rm.close()
+            except Exception:
+                pass
 
     def __enter__(self) -> "VisaInstrument":
         return self
