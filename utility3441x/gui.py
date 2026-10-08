@@ -62,7 +62,7 @@ def _format_eta(seconds: float | None) -> str:
 class ServiceUtilityGui(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("3441x Service Utility 1.0 RC13")
+        self.title("3441x Service Utility 1.0 RC14")
         self.geometry("1050x760")
         self.events: queue.Queue[tuple[str, object]] = queue.Queue()
         self.cli = Path(__file__).resolve().parents[1] / "3441x_service_utility.py"
@@ -106,16 +106,21 @@ class ServiceUtilityGui(tk.Tk):
         tabs = ttk.Notebook(self)
         tabs.pack(fill="both", expand=True, padx=8, pady=(0, 8))
         offline = ttk.Frame(tabs, padding=8)
+        cal_history = ttk.Frame(tabs, padding=8)
         backup = ttk.Frame(tabs, padding=8)
         firmware = ttk.Frame(tabs, padding=8)
         identity = ttk.Frame(tabs, padding=8)
         tabs.add(offline, text="Offline analysis")
+        tabs.add(cal_history, text="CAL history")
         tabs.add(backup, text="Backup")
         tabs.add(firmware, text="Firmware")
         tabs.add(identity, text="Boot identity")
 
         ttk.Button(offline, text="Inspect NOR dump…", command=self._inspect_nor).pack(anchor="w", pady=3)
         ttk.Button(offline, text="Inspect CAL payload…", command=self._inspect_cal).pack(anchor="w", pady=3)
+        ttk.Label(cal_history, text="Compare current and retained CAL records from a complete NOR dump.").pack(anchor="w", pady=3)
+        ttk.Label(cal_history, text="A CAL:DATA:ALL payload contains one array only; it cannot provide slot history.").pack(anchor="w", pady=3)
+        ttk.Button(cal_history, text="Open NOR CAL history…", command=self._inspect_cal_history).pack(anchor="w", pady=8)
         ttk.Button(offline, text="Inspect .xs package…", command=self._inspect_xs).pack(anchor="w", pady=3)
         ttk.Button(
             offline,
@@ -183,7 +188,7 @@ class ServiceUtilityGui(tk.Tk):
         ttk.Label(
             identity,
             text=(
-                "RC13 hardware-validation mode: identity writing and APP upload are "
+                "RC14: identity writing and APP upload are "
                 "enabled, while general Recovery upload remains blocked. Review the "
                 "hash-bound plan in the Yes/No confirmation before proceeding."
             ),
@@ -238,6 +243,12 @@ class ServiceUtilityGui(tk.Tk):
                 if kind == "output":
                     self.output.insert("end", str(payload) + "\n")
                     self.output.see("end")
+                elif kind == "cal_report":
+                    from .cal_viewer import CalViewer
+                    CalViewer(self, payload["path"], payload["report"])
+                elif kind == "cal_history":
+                    from .cal_history_viewer import CalHistoryViewer
+                    CalHistoryViewer(self, payload["path"], payload["history"])
                 elif kind == "warning":
                     self.output.insert("end", str(payload) + "\n", "warning")
                     self.output.see("end")
@@ -332,7 +343,10 @@ class ServiceUtilityGui(tk.Tk):
             try:
                 result = function()
                 if result is not None:
-                    self.events.put(("output", json.dumps(result, ensure_ascii=False, indent=2, default=str)))
+                    output = result if isinstance(result, str) else json.dumps(
+                        result, ensure_ascii=False, indent=2, default=str
+                    )
+                    self.events.put(("output", output))
                     if isinstance(result, dict) and isinstance(result.get("warning"), str):
                         self.events.put(("warning", result["warning"]))
                 self.events.put(("done", {"label": label, "success": True}))
@@ -367,7 +381,7 @@ class ServiceUtilityGui(tk.Tk):
     def _run_cli(self, arguments: list[str]) -> None:
         def operation() -> object:
             completed = subprocess.run(
-                [sys.executable, str(self.cli), *arguments],
+                [sys.executable, "-X", "utf8", str(self.cli), *arguments],
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
@@ -388,16 +402,39 @@ class ServiceUtilityGui(tk.Tk):
 
         self._run_worker("Reading diagnostics", operation)
 
-    def _file_command(self, title: str, command: str) -> None:
+    def _file_command(self, title: str, command: str, *options: str) -> None:
         path = filedialog.askopenfilename(title=title)
         if path:
-            self._run_cli([command, path])
+            self._run_cli([command, path, *options])
 
     def _inspect_nor(self) -> None:
         self._file_command("Select a complete NOR dump", "inspect-nor")
 
     def _inspect_cal(self) -> None:
-        self._file_command("Select a CAL payload", "inspect-cal")
+        path = filedialog.askopenfilename(title="Select a CAL:DATA:ALL payload")
+        if not path:
+            return
+
+        def operation() -> object:
+            from .offline import parse_cal_payload
+            report = parse_cal_payload(Path(path).read_bytes(), explain=True)
+            self.events.put(("cal_report", {"path": path, "report": report}))
+            return f"CAL viewer opened: {path}"
+
+        self._run_worker("Reading CAL file", operation)
+
+    def _inspect_cal_history(self) -> None:
+        path = filedialog.askopenfilename(title="Select a complete NOR dump for CAL history")
+        if not path:
+            return
+
+        def operation() -> object:
+            from .cal_history import scan_cal_history
+            history = scan_cal_history(Path(path).read_bytes(), source=path)
+            self.events.put(("cal_history", {"path": path, "history": history}))
+            return f"CAL history opened: {path}"
+
+        self._run_worker("Reading NOR CAL history", operation)
 
     def _inspect_xs(self) -> None:
         self._file_command("Select an .xs package", "inspect-xs")

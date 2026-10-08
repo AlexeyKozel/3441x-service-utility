@@ -134,6 +134,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     inspect_cal = sub.add_parser("inspect-cal", help="Inspect a CAL:DATA:ALL payload")
     inspect_cal.add_argument("payload", type=Path)
+    inspect_cal.add_argument("--explain", action="store_true", help="Explain known schema45 field meanings and unresolved usage")
 
     inspect_xs = sub.add_parser("inspect-xs", help="Validate an .xs/S-record package")
     inspect_xs.add_argument("package", type=Path)
@@ -229,7 +230,12 @@ def main(argv: list[str] | None = None) -> int:
         _print_json(inspect_nor_file(args.image))
         return 0
     if args.command == "inspect-cal":
-        _print_json(parse_cal_payload(args.payload.read_bytes()))
+        try:
+            report = parse_cal_payload(args.payload.read_bytes(), explain=args.explain)
+        except (ValueError, OSError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        _print_json(report)
         return 0
     if args.command == "inspect-xs":
         _, report = _package_report(args.package)

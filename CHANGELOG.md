@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.0.0-rc14
+
+Expanded calibration-table handling and coefficient interpretation.
+
+- Added a searchable CAL viewer with interpreted values, formulas and conditional physical-unit conversions.
+- Added current/historical CAL-slot comparison with changed-value highlighting.
+- Added filter curves and collapsible coefficient vectors.
+- Expanded ADC, AC/SLOW and delay explanations, including the APP 2.43 MC/MZ reference.
+- Preserved raw CAL values and existing write-workflow gates.
+- Validation: offline regression tests; no new hardware validation is claimed.
+
 ## v1.0.0-rc13
 
 - Matched the OEM APP block handshake with one bounded 100-byte VISA read per acknowledgement.

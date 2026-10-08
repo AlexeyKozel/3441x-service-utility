@@ -1,8 +1,8 @@
 """Safety-focused service utility for HP/Agilent 34410A, 34411A and L4411A."""
 
-__version__ = "1.0.0-rc13"
+__version__ = "1.0.0-rc14"
 
-# RC13 permits only 34410A/34411A APP (instrumentimage) packages through the
+# RC14 permits only 34410A/34411A APP (instrumentimage) packages through the
 # broad updater UI. Recovery/updateimage upload stays disabled. Identity
 # switching remains separately bounded to a fresh session SA96.
 LIVE_FIRMWARE_WRITE_ENABLED = False

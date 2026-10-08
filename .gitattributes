@@ -1,0 +1,2 @@
+# Preserve exact runtime catalogs and release-manifest bytes on every platform.
+* -text

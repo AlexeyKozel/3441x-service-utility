@@ -244,13 +244,20 @@ def inspect_recovery_bytes(recovery: bytes) -> dict[str, object]:
     }
 
 
-def parse_cal_payload(payload: bytes) -> dict[str, object]:
+def parse_cal_payload(payload: bytes, *, explain: bool = False) -> dict[str, object]:
     if len(payload) < 10:
         raise ValueError("CAL:DATA:ALL payload is too short")
     version = int.from_bytes(payload[0:2], "big")
     body_length = int.from_bytes(payload[2:6], "big")
     stored = int.from_bytes(payload[6:10], "big")
     if len(payload) != 10 + body_length:
+        if len(payload) == SCHEMA45_BODY_BYTES:
+            raise ValueError(
+                "This 4924-byte file may be a raw schema45 CAL body without its header. "
+                "Inspect CAL requires a CAL:DATA:ALL payload (4934 bytes for schema45). "
+                "For the exported dumps, select *_cal_payload_reconstructed.bin, "
+                "not *_cal_body.bin."
+            )
         raise ValueError(
             f"payload size {len(payload)} does not equal 10+bodyLength {10 + body_length}"
         )
@@ -268,6 +275,10 @@ def parse_cal_payload(payload: bytes) -> dict[str, object]:
     }
     if body_length == SCHEMA45_BODY_BYTES:
         result["schema45"] = decode_schema45_body(body)
+    if explain:
+        from .cal_interpretation import add_cal_interpretation
+
+        add_cal_interpretation(result)
     return result
 
 
