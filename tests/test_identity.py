@@ -41,8 +41,8 @@ def snapshot(*, source: str = "instrument-current-session") -> FreshInstrumentSn
     return FreshInstrumentSnapshot(
         session_id="session-1",
         resource="TCPIP0::192.0.2.1::inst0::INSTR",
-        idn="Agilent Technologies,34410A,MY00000001,2.43",
-        serial="MY00000001",
+        idn="Agilent Technologies,34410A,TEST00000001,2.43",
+        serial="TEST00000001",
         current_model="34410A",
         app_revision="2.43",
         recovery_revision="2.35",
@@ -147,7 +147,7 @@ class IdentityPlanTests(unittest.TestCase):
             def identity(self):
                 # The old APP keeps reporting the source model even though the
                 # programmed SA96 boot personality is already the target.
-                return {"model": "34410A", "serial": "MY00000001"}
+                return {"model": "34410A", "serial": "TEST00000001"}
 
             def write_text(self, command):
                 self.writes.append(command)
@@ -180,7 +180,7 @@ class IdentityPlanTests(unittest.TestCase):
                 self.reconnects += 1
 
             def identity(self):
-                return {"model": self.model, "serial": "MY00000001"}
+                return {"model": self.model, "serial": "TEST00000001"}
 
             def write_text(self, command):
                 self.writes.append(command)
@@ -205,7 +205,7 @@ class IdentityPlanTests(unittest.TestCase):
                 raise AssertionError("target APP identity already proves automatic reboot")
 
             def identity(self):
-                return {"model": "34411A", "serial": "MY00000001"}
+                return {"model": "34411A", "serial": "TEST00000001"}
 
             def write_text(self, command):
                 raise AssertionError("an additional reboot must not be sent")
@@ -234,7 +234,7 @@ class IdentityPlanTests(unittest.TestCase):
                 pass
 
             def identity(self):
-                return {"model": "34411A", "serial": "MY00000001"}
+                return {"model": "34411A", "serial": "TEST00000001"}
 
             def write_text(self, command):
                 self.writes.append(command)
@@ -273,7 +273,7 @@ class IdentityLoaderOutcomeTests(unittest.TestCase):
                 pass
 
             def identity(self):
-                return {"model": "loader_34410A", "serial": "MY00000001"}
+                return {"model": "loader_34410A", "serial": "TEST00000001"}
 
             def write_text(self, command):
                 pass

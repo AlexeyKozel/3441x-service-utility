@@ -46,9 +46,9 @@ class ServiceBackupTests(unittest.TestCase):
             return {
                 "manufacturer": "Agilent Technologies",
                 "model": "34410A",
-                "serial": "MY00000001",
+                "serial": "TEST00000001",
                 "firmware": "2.43-2.40-0.09-46-09",
-                "raw": "Agilent Technologies,34410A,MY00000001,2.43-2.40-0.09-46-09",
+                "raw": "Agilent Technologies,34410A,TEST00000001,2.43-2.40-0.09-46-09",
             }
 
         @staticmethod

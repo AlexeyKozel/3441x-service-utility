@@ -7,9 +7,13 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from .cal_filters import filter_vectors, response, cascade_response
-from .cal_display import build_display
+from .cal_filters import (filter_vectors, response, cascade_response,
+                          impulse_response, cascade_impulse_response)
+from .cal_quad_viewer import QuadraticPlot
+from .cal_engine import CalSnapshot
 from .cal_delay_reference import DelayReference
+from .cal_lifecycle import lifecycle_text
+from .cal_guide import CalGuide, topic_for
 
 
 class CalViewer(tk.Toplevel):
@@ -19,9 +23,10 @@ class CalViewer(tk.Toplevel):
         self.geometry('1120x780')
         self.minsize(850, 580)
         self.report = report
-        self.rows = report.get('schema45', {}).get('values', [])
-        self.meanings = report.get('schema45', {}).get('meanings', {})
-        self.display_rows = build_display(report)
+        self.snapshot = CalSnapshot(report)
+        self.rows = self.snapshot.rows
+        self.meanings = self.snapshot.meanings
+        self.display_rows = self.snapshot.display
         self.curve = []
         self.x_label = ''
         self.integrity = 'Checksum OK' if report['checksumValid'] else 'CHECKSUM MISMATCH — values unverified'
@@ -30,13 +35,20 @@ class CalViewer(tk.Toplevel):
         ttk.Label(self, text='Physical equivalents where established; conditions apply. Stored values remain unchanged.',
                   padding=(10, 0, 10, 8)).pack(anchor='w')
         tabs = ttk.Notebook(self)
+        self.tabs = tabs
         tabs.pack(fill='both', expand=True, padx=10, pady=4)
         values_tab = ttk.Frame(tabs, padding=8)
+        self.values_tab = values_tab
         filters_tab = ttk.Frame(tabs, padding=8)
         tabs.add(values_tab, text='Calibration values')
         tabs.add(filters_tab, text='Filter curves')
         self._values_ui(values_tab)
         self._filters_ui(filters_tab)
+        self.quadratic_plot = QuadraticPlot(tabs, report)
+        tabs.add(self.quadratic_plot, text='Quadratic correction')
+        self.guide = CalGuide(tabs, self.rows, self.display_rows, self._navigate_coefficient)
+        tabs.add(self.guide, text='Calibration reference')
+        tabs.bind('<<NotebookTabChanged>>', self._reference_tab_selected)
         footer = ttk.Frame(self, padding=8)
         footer.pack(fill='x')
         ttk.Button(footer, text='Export JSON…', command=self._export).pack(side='right')
@@ -56,6 +68,9 @@ class CalViewer(tk.Toplevel):
         self.count.pack(side='right')
         self.technical = tk.BooleanVar(value=False)
         ttk.Checkbutton(frame, text='Show technical details', variable=self.technical,
+                        command=self._select).pack(anchor='w', pady=(0, 6))
+        self.lifecycle = tk.BooleanVar(value=False)
+        ttk.Checkbutton(frame, text='Show calculation and use', variable=self.lifecycle,
                         command=self._select).pack(anchor='w', pady=(0, 6))
         split = ttk.Panedwindow(frame, orient='vertical')
         split.pack(fill='both', expand=True)
@@ -151,6 +166,28 @@ class CalViewer(tk.Toplevel):
     def _open_delay_reference(self):
         return DelayReference(self)
 
+    def _reference_tab_selected(self, *_):
+        if self.tabs.select() != str(self.guide):
+            return
+        selected = self.table.selection()
+        row = self.rows[int(selected[0])] if selected and selected[0].isdigit() else None
+        self.guide.show(topic_for(row) if row else 'storage', row)
+
+    def _navigate_coefficient(self, index):
+        # Clear restrictive filters before selecting the real row in the same file.
+        self.search.set('')
+        self.family.set('All')
+        self.lifecycle.set(True)
+        item = str(index)
+        parent = self.table.parent(item)
+        if parent:
+            self.table.item(parent, open=True)
+        self.table.selection_set(item)
+        self.table.focus(item)
+        self.table.see(item)
+        self._select()
+        self.tabs.select(self.values_tab)
+
     def _detail(self, text, *, delay_reference=False):
         self.detail.configure(state='normal')
         self.detail.delete('1.0', 'end')
@@ -190,6 +227,8 @@ class CalViewer(tk.Toplevel):
                          'Initial APP 2.43 tables by function, range and NPLC; separate from the saved CAL value. '
                          'Their numeric link to this field is not confirmed.'])
         text.extend(['', display['description'], display['qualification'], *display.get('derived', [])])
+        if self.lifecycle.get():
+            text.extend(['', lifecycle_text(card, technical=self.technical.get())])
         if self.technical.get():
             text.extend(['', 'Technical details', row['name'],
                          f'Stored value: {row["value"]!r}  |  {row["type"]}  |  body offset 0x{row["offset"]:04X}',
@@ -214,16 +253,20 @@ class CalViewer(tk.Toplevel):
         bar.pack(fill='x')
         self.vector = tk.StringVar(value=next(iter(self.vectors), ''))
         self.mode = tk.StringVar(value='Coefficient index')
+        self.plot_kind = tk.StringVar(value='Magnitude')
         ttk.Label(bar, text='Vector').pack(side='left')
         ttk.Combobox(bar, textvariable=self.vector, state='readonly', width=30,
                      values=list(self.vectors)).pack(side='left', padx=6)
         ttk.Combobox(bar, textvariable=self.mode, state='readonly', width=35,
-                     values=['Coefficient index', 'APP11 2.43 image1 cascade (nominal Hz)']).pack(side='left', padx=6)
+                     values=['Coefficient index', 'APP11 2.43 image1 cascade']).pack(side='left', padx=6)
+        ttk.Combobox(bar, textvariable=self.plot_kind, state='readonly', width=18,
+                     values=['Magnitude', 'Impulse response']).pack(side='left', padx=6)
         self.scope = ttk.Label(frame, wraplength=960, justify='left')
         self.scope.pack(fill='x', pady=8)
         zoom = ttk.Frame(frame)
         zoom.pack(fill='x')
-        ttk.Label(zoom, text='Maximum frequency (blank = full span)').pack(side='left')
+        self.max_x_label = ttk.Label(zoom)
+        self.max_x_label.pack(side='left')
         self.max_x = tk.StringVar()
         ttk.Entry(zoom, textvariable=self.max_x, width=14).pack(side='left', padx=6)
         ttk.Button(zoom, text='Apply', command=self._draw).pack(side='left')
@@ -236,34 +279,47 @@ class CalViewer(tk.Toplevel):
         self.canvas.bind('<Motion>', self._hover)
         self.vector.trace_add('write', self._recalculate)
         self.mode.trace_add('write', self._recalculate)
+        self.plot_kind.trace_add('write', self._recalculate)
         self._recalculate()
 
     def _recalculate(self, *_):
         self.max_x.set('')
+        self.cursor.configure(text='Move the pointer over the curve to read a sampled value.')
+        impulse = self.plot_kind.get() == 'Impulse response'
+        if impulse:
+            self.max_x_label.configure(text='Maximum index (blank = full span)' if self.mode.get() == 'Coefficient index'
+                                       else 'Maximum nominal time in us (blank = full span)')
+        elif self.mode.get() == 'Coefficient index':
+            self.max_x_label.configure(text='Maximum cycles per coefficient-index step (blank = full span)')
+        else:
+            self.max_x_label.configure(text='Maximum frequency in Hz (blank = full span)')
         name = self.vector.get()
         try:
             taps = self.vectors[name]
             if self.mode.get() == 'Coefficient index':
-                self.curve = response(taps, points=2049)
-                self.x_label = 'Cycles per coefficient-index step (not Hz)'
+                self.curve = impulse_response(taps) if impulse else response(taps, points=2049)
+                self.x_label = 'Coefficient index (not time)' if impulse else 'Cycles per coefficient-index step (not Hz)'
                 note = 'Single-vector polynomial; signed low16 operands, DC normalized. '
             else:
                 if 'FlatnessCoefs' not in name:
                     raise ValueError('Select a flatness vector to pair it with the corresponding LP filter.')
                 kind = 'ACV' if name.startswith('Acv') else 'ACI'
                 lp = self.vectors['AcvLpFilter' if kind == 'ACV' else 'AciLpFilter']
-                self.curve = cascade_response(taps, lp, kind.lower(), points=4097)
-                self.x_label = 'Nominal frequency (Hz)'
+                self.curve = (cascade_impulse_response(taps, lp, kind.lower()) if impulse
+                              else cascade_response(taps, lp, kind.lower(), points=4097))
+                self.x_label = 'Nominal time (us)' if impulse else 'Nominal frequency (Hz)'
                 conditions = ('72 G3/event; lags 2k/j; banks 68/138/68/68; L/K/H=71/59/63'
                               if kind == 'ACV' else
                               '108 G3/event; lags 7k/j; banks 68/488/68/68; L/K/H=107/102/92')
                 note = (f'Conditional {kind} flatness × LP; APP11 2.43 image1, nominal G3=106.25 MHz; '
                         f'{conditions}; FineTrigger=2. Assumes held lock/release and no new RX writes after washout. '
                         'This preset does not identify the active instrument configuration. ')
-            self.scope.configure(text=f'{self.integrity}. {note} '
-                                 'Relative magnitude only, not the full instrument response. '
+            projection = ('Unit impulse, DC gain normalized to 1, zero initial state. '
+                          'Time origin excludes additional pipeline/transport latency; not RMS settling. '
+                          if impulse else 'Relative magnitude only, not the full instrument response. ')
+            self.scope.configure(text=f'{self.integrity}. {note} ' + projection +
                                  'Excludes integer truncation/wrap, ADC, analog path, software filters and RMS. '
-                                 'Plot floor: −120 dB; narrow nulls depend on sampling resolution.')
+                                 + ('' if impulse else 'Plot floor: −120 dB; narrow nulls depend on sampling resolution.'))
         except (ValueError, KeyError) as exc:
             self.curve = []
             self.scope.configure(text=str(exc))
@@ -275,14 +331,18 @@ class CalViewer(tk.Toplevel):
         self.visible = []
         if not self.curve:
             return
+        impulse = self.plot_kind.get() == 'Impulse response'
         try:
             end = float(self.max_x.get()) if self.max_x.get().strip() else self.curve[-1][0]
             if not math.isfinite(end) or not 0 < end <= self.curve[-1][0]:
                 raise ValueError()
         except ValueError:
-            canvas.create_text(20, 20, anchor='nw', text='Enter a positive maximum within the full frequency span.')
+            unit = (('nominal us' if self.mode.get() != 'Coefficient index' else 'coefficient index')
+                    if impulse else ('Hz' if self.mode.get() != 'Coefficient index' else 'cycles per coefficient-index step'))
+            canvas.create_text(20, 20, anchor='nw',
+                               text=f'Enter a positive maximum within the full {unit} span.')
             return
-        points = [(x, max(-120.0, y)) for x, y in self.curve if x <= end]
+        points = [(x, y if impulse else max(-120.0, y)) for x, y in self.curve if x <= end]
         if len(points) < 2:
             canvas.create_text(20, 20, anchor='nw', text='Span too small for this sampled curve.')
             return
@@ -304,10 +364,15 @@ class CalViewer(tk.Toplevel):
             canvas.create_line(left, py, right, py, fill='#e5e7eb')
             canvas.create_text(left-7, py, anchor='e', text=f'{y:.4g}')
         canvas.create_rectangle(left, top, right, bottom, outline='#777777')
-        canvas.create_text(left, 10, anchor='w', text='Magnitude relative to DC (dB)')
+        canvas.create_text(left, 10, anchor='w', text='Unit impulse response (linear)' if impulse
+                           else 'Magnitude relative to DC (dB)')
         canvas.create_text((left+right)/2, height-12, text=self.x_label)
         coords = [v for x, y in points for v in position(x, y)]
         canvas.create_line(*coords, fill='#1467b2', width=2, tags='response')
+        if impulse:
+            for x, y in points:
+                px, py = position(x, y)
+                canvas.create_oval(px-2, py-2, px+2, py+2, fill='#1467b2', outline='', tags='impulse_sample')
         self.visible = [(x,y) for x,y in self.curve if x <= end]
         self.plot_bounds = left, right, end
 
@@ -317,7 +382,11 @@ class CalViewer(tk.Toplevel):
         left, right, end = self.plot_bounds
         frequency = min(end, max(0, (event.x-left)/(right-left)*end))
         x, y = min(self.visible, key=lambda point: abs(point[0]-frequency))
-        self.cursor.configure(text=f'{x:.9g} {"Hz (nominal)" if self.mode.get() != "Coefficient index" else "cycles/index"}   |   {y:.9g} dB (sampled)')
+        if self.plot_kind.get() == 'Impulse response':
+            unit = 'us (nominal)' if self.mode.get() != 'Coefficient index' else 'index'
+            self.cursor.configure(text=f'{x:.9g} {unit}   |   {y:.9g} (unit impulse response)')
+        else:
+            self.cursor.configure(text=f'{x:.9g} {"Hz (nominal)" if self.mode.get() != "Coefficient index" else "cycles/index"}   |   {y:.9g} dB (sampled)')
 
     def _export(self):
         path = filedialog.asksaveasfilename(parent=self, title='Export decoded CAL JSON',

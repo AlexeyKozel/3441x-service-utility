@@ -1,99 +1,53 @@
-# 3441x Service Utility
+# 3441x Service Utility 1.0 RC15
 
-An unofficial service and recovery utility for Agilent/Keysight 34410A and 34411A digital multimeters.
+An unofficial service utility for Agilent/Keysight 34410A and 34411A digital multimeters, with a Windows GUI and command-line interface.
 
-The current public release is **v1.0.0-rc14**. It provides a Windows GUI and a console interface for diagnostic reads, backups, offline package inspection, boot-identity maintenance, and controlled upload of original APP images.
+**RC15 has not been tested on a physical instrument. Checks are offline only. CAL restore is experimental and has not been validated on hardware.** See [release notes](RELEASE_NOTES.md) and [SAFETY.md](SAFETY.md).
 
-> [!WARNING]
-> This software can write persistent instrument storage and firmware. A failed operation or power loss can brick the instrument. Use it entirely at your own risk. The author accepts no responsibility for damaged equipment, data loss, or calibration issues. Read [SAFETY.md](SAFETY.md) before enabling any write operation.
+## Start
 
-RC14 expands calibration-table handling and coefficient interpretation: a searchable CAL viewer, current/historical slot comparison, filter curves, and explanations with formulas and physical units where established. See [release notes](CHANGELOG.md).
-
-## Features
-
-- Reads instrument identity and diagnostic information through VISA.
-- Creates service-memory and native 64 KiB SA96 backups.
-- Inspects NOR dumps, CAL payloads, and factory `.xs` packages offline.
-- Simulates an `.xs` package against a copy of a NOR image.
-- Switches the boot identity between 34410A and 34411A with exact read-back verification.
-- Uploads original 34410A or 34411A APP `instrumentimage` packages.
-- Uses progress reporting for long reads and writes.
-- Stores backups in `3441x Service Utility Backups` beside the launched utility.
-
-The repository contains no firmware, updater packages, instrument dumps, calibration data, or vendor binaries.
-
-## Walkthrough
-
-[docs/CONVERSION-WALKTHROUGH.md](docs/CONVERSION-WALKTHROUGH.md) is an
-illustrated, step-by-step run of a complete boot-identity conversion and its
-reversal on real hardware, including which order to use in each direction, what
-the alarming-but-normal moments look like, and how to recover from the loader.
-
-## Requirements
-
-- Windows 10 or later
-- Python 3.10 or later
-- A VISA implementation compatible with your interface
-- PyVISA
-
-Install the Python dependency:
+Use Python 3.11 or later with Tkinter. Offline analysis uses the standard library. Instrument communication additionally requires a compatible VISA backend and PyVISA:
 
 ```powershell
 py -m pip install -r requirements-live.txt
-```
-
-## Running the utility
-
-GUI:
-
-```powershell
 run_gui.bat
-```
-
-Console help:
-
-```powershell
 run_cli.bat --help
+py -B verify_release.py
 ```
 
-Pass the VISA resource accepted by your VISA installation, for example `GPIB0::20::INSTR`.
+Supply the VISA resource appropriate to your installation. No firmware, vendor binaries, instrument dumps or user calibration backups are included.
 
-## Write-operation behavior
+## Calibration analysis
 
-Identity switching first saves the original SA96 sector, uploads a hash-bound patched package, and performs a complete read-back. The utility handles either an automatic reboot or an explicit reboot only after the programmed sector has been verified.
+Inspect CAL shows decoded coefficients, physical equivalents where established, calculation/application descriptions and a linked technical reference. It also provides filter and quadratic-correction plots. Plot conditions are shown in the interface; these are not measurements of complete instrument performance.
 
-APP upload accepts only factory-format `instrumentimage` packages identified as 34410A or 34411A. Cross-loading between those two models is allowed after a simple Yes/No confirmation. General `updateimage` upload remains blocked.
+CAL history opens either a full NOR dump or a standalone 256 KiB CAL journal. It identifies current and historical slots and compares their stored bytes and interpreted values. Slot order is not a dated service history.
 
-After a native APP package is accepted, the instrument may remain at `UPDATING FIRMWARE`. This matches the original updater path: the utility asks for a manual power cycle and then waits for the instrument to reconnect. It deliberately does not send `:diag:reboot` for APP `instrumentimage` completion.
+Compare CAL backups accepts multiple current-CAL files. It selects the earliest dated snapshot as reference and allows manual A/B selection. Dates come from matching JSON metadata or recognized file names, never filesystem modification times. Missing metadata does not prevent comparison. Unknown dates can be supplied for the current session. Time trends use dated snapshots with the same known serial number; backup dates are not calibration dates.
 
-RC13 matches the OEM block transaction more closely: each acknowledgement is read with one bounded 100-byte VISA read, and the main block loop uses the OEM 5-second timeout. After a successful `END`, the manual power-cycle prompt is shown immediately without a premature reconnect attempt.
+Export visible rows to CSV saves the filtered A/B table, expanding matching filter groups. CSV uses UTF-8 with BOM and comma separators. Import exact stored values as text in spreadsheet software when preserving all digits matters.
 
-No firmware block or package is automatically retried after a timeout.
+## Backup and restore
 
-## Tests
+- Save CAL writes `SERIAL_CAL_<UTC timestamp>.bin` and `.bin.json`. The schema45 payload is 4,934 bytes, including its 10-byte header. Optional operating hours and identity metadata are stored in JSON; failure to read the counter does not prevent backup.
+- Save CAL history reads all 32 journal slots (256 KiB) into `SERIAL_CAL_HISTORY_<UTC timestamp>.bin`, with JSON metadata. Do not operate the instrument during this sequential read.
+- A full NOR backup contains substantially more than CAL. Backup file formats in the GUI explains which viewer accepts each format.
+- Experimental Restore CAL accepts current schema45 CAL payloads for 34411A APP 2.43. It checks the file and instrument, requests confirmation for a missing/different filename serial, and saves a pre-write backup. Loading working CAL and saving to NOR require separate confirmations. Working CAL is read back byte for byte; persistence checks the current NOR slot. Declining NOR storage leaves loaded working values in place. Errors do not trigger automatic retries or rollback. Journal and full NOR files cannot be restored through this workflow.
+
+## Technical reference and other workflows
+
+Hidden SCPI reference documents 108 forms from static APP11 2.43 analysis, including arguments, selectors, responses, effects and unresolved details. Browsing it does not send commands. The CLI provides `scpi-reference --format text`.
+
+Existing workflows include diagnostic reads, service backups, offline NOR/XS inspection and simulation, bounded boot-identity switching and original APP image upload. These can modify persistent storage: read [SAFETY.md](SAFETY.md). General updateimage upload remains blocked. APP upload requires a manual power cycle when prompted and does not automatically retry failed blocks.
+
+The [conversion walkthrough](docs/CONVERSION-WALKTHROUGH.md) records earlier hardware work; it is not hardware validation of RC15.
+
+## Verification
 
 ```powershell
-py -X utf8 -m unittest discover -s tests -v
+py -B -X utf8 -m unittest discover -s tests -v
 ```
 
-Some evidence-bound tests are skipped when the private research artifacts are not present. The public tests and runtime do not require those artifacts.
+Private evidence tests are excluded from this public package; synthetic tests use placeholder serial numbers. Tests do not require a connected instrument. Manifest verification checks package integrity, not hardware safety or metrological correctness.
 
-## Building a release archive
-
-```powershell
-py -X utf8 build_release.py
-```
-
-The command creates a versioned ZIP and `SHA256SUMS.txt` under `dist/v1.0.0-rc14`.
-
-## Project status
-
-RC14 adds offline calibration analysis and has passed the offline regression suite. New hardware validation is not claimed for RC14.
-
-RC13 was a hardware-validation release. The author successfully uploaded original 34410A and 34411A APP packages in sequence on real hardware and completed the required manual power cycles. This is not a warranty of safety or compatibility with every instrument, interface, firmware version, or recovery state.
-
-This project is not affiliated with or endorsed by Keysight Technologies, Agilent Technologies, or Hewlett-Packard.
-
-## License
-
-The source code is available under the [MIT License](LICENSE). Vendor firmware, updater packages, instrument dumps, and calibration data are not included and are not licensed by this project.
+Source code is covered by the [MIT License](LICENSE). This project is not affiliated with or endorsed by Keysight, Agilent or Hewlett-Packard.

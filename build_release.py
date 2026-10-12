@@ -7,12 +7,13 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "v1.0.0-rc14"
-ARCHIVE_STEM = "3441x_service_utility_v1_0_rc14"
+VERSION = "v1.0.0-rc15"
+ARCHIVE_STEM = "3441x_service_utility_v1_0_rc15"
 TOP_LEVEL_FILES = (
     "3441x_service_utility.py",
     "3441x_service_utility_gui.pyw",
     "README.md",
+    "RELEASE_NOTES.md",
     "SAFETY.md",
     "CHANGELOG.md",
     "LICENSE",
@@ -21,7 +22,7 @@ TOP_LEVEL_FILES = (
     "run_gui.bat",
     "verify_release.py",
 )
-DIRECTORIES = ("utility3441x", "docs")
+DIRECTORIES = ("utility3441x", "docs", "tests")
 
 
 def sha256_file(path: Path) -> str:
@@ -36,7 +37,7 @@ def main() -> int:
     output_dir = ROOT / "dist" / VERSION
     staging = output_dir / ARCHIVE_STEM
     if staging.exists():
-        shutil.rmtree(staging)
+        raise FileExistsError(f"Release staging already exists: {staging}")
     staging.mkdir(parents=True, exist_ok=True)
 
     for name in TOP_LEVEL_FILES:

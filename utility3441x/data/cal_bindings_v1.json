@@ -3,7 +3,7 @@
   "schemaVersion": 45,
   "bodyBytes": 4924,
   "sourceCatalogSha256": "1dcb9acab034bc0447c9f27c9fc1663a6faf73cad5b45a0f48b51bcf322e7c1b",
-  "registrySha256": "49c711f7084f31475f3ae56bcee8442e319cbad888da96fcf2bb18a38234154f",
+  "registrySha256": "51bf2a467f1e36113a0136b7cf2c4e066499abbf673caeac5fbc637037281e2a",
   "bindingScope": "APP11 2.43 static tuple/layout crosswalk; shared checked schema45 layout. Family descriptions are not proof of every runtime consumer.",
   "rows": [
     {

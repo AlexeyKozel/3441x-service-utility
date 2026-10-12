@@ -29,9 +29,9 @@ class AppCompletionTests(unittest.TestCase):
         class Instrument:
             def __init__(self):
                 self.identities = [
-                    {"model": "34410A", "serial": "MY00000001"},
+                    {"model": "34410A", "serial": "TEST00000001"},
                     TimeoutError("internal APP programming"),
-                    {"model": "34411A", "serial": "MY00000001"},
+                    {"model": "34411A", "serial": "TEST00000001"},
                 ]
                 self.reconnects = 0
 
@@ -49,7 +49,7 @@ class AppCompletionTests(unittest.TestCase):
         after = wait_for_final_app_identity(
             instrument,
             app_package(),
-            {"model": "34410A", "serial": "MY00000001"},
+            {"model": "34410A", "serial": "TEST00000001"},
             sleep=lambda _: None,
             status=messages.append,
         )
@@ -71,7 +71,7 @@ class AppCompletionTests(unittest.TestCase):
             reconnects = 0
 
             def identity(self):
-                return {"model": "34410A", "serial": "MY00000001"}
+                return {"model": "34410A", "serial": "TEST00000001"}
 
             def reconnect(self):
                 self.reconnects += 1
@@ -82,7 +82,7 @@ class AppCompletionTests(unittest.TestCase):
             wait_for_final_app_identity(
                 instrument,
                 app_package(),
-                {"model": "34410A", "serial": "MY00000001"},
+                {"model": "34410A", "serial": "TEST00000001"},
                 timeout_seconds=5,
                 poll_seconds=2,
                 monotonic=clock.monotonic,

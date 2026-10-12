@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from utility3441x.cal_viewer import CalViewer
+from utility3441x.cal_guide import topic_for, linked_indices
 from utility3441x.offline import load_schema45_registry, parse_cal_payload
 
 
@@ -49,12 +50,81 @@ class CalViewerTests(unittest.TestCase):
         self.assertEqual(len(v.table.get_children()), 0)
         self.assertIn('No matching', v.detail.get('1.0', 'end'))
 
+    def test_guide_navigation_preserves_adc_profile_and_opens_filtered_row(self):
+        v = self.viewer
+        v.search.set('Adc_DcOffset[ACV]')
+        v.tabs.select(v.guide)
+        self.root.update()
+        self.assertEqual(v.tabs.select(), str(v.guide))
+        self.assertEqual(v.guide.topic, 'adc')
+        links = v.guide.table.get_children()
+        self.assertEqual(len(links), 8)
+        self.assertTrue(all(v.rows[int(i)]['meaning']['groupId'] == 1 for i in links))
+        target = next(i for i in links if v.rows[int(i)]['meaning']['family'] == 'Adc_LutGain')
+        v.guide.table.selection_set(target)
+        v.guide.open_selected()
+        self.assertEqual(v.table.selection(), (target,))
+        self.assertEqual(v.search.get(), '')
+        self.assertEqual(v.family.get(), 'All')
+        self.assertTrue(v.lifecycle.get())
+        self.assertEqual(v.tabs.select(), str(v.values_tab))
+        v.tabs.select(v.guide)
+        self.root.update()
+        self.assertEqual(v.guide.context.cget('text'), 'ADC profile: ACV')
+
+    def test_guide_dcv_links_and_general_page(self):
+        v = self.viewer
+        v.search.set('AdcQuad')
+        v.tabs.select(v.guide)
+        self.root.update()
+        self.assertEqual(v.guide.topic, 'dcv')
+        self.assertEqual(len(v.guide.table.get_children()), 16)
+        self.assertIn('V = V0', v.guide.text.get('1.0', 'end'))
+        v.guide.show('storage')
+        self.assertEqual(v.guide.table.get_children(), ())
+        self.assertIn('disabled', v.guide.open_button.state())
+        v.guide.open_selected()
+        self.assertEqual(v.tabs.select(), str(v.guide))
+
+    def test_reference_covers_families_and_groups_filter_links(self):
+        v = self.viewer
+        self.assertTrue(all(topic_for(row) != 'storage' for row in v.rows))
+        for name, topic in [('Divider10M', 'res'), ('CapOffset', 'freq_cap'),
+                            ('HeaterGain', 'drive'), ('McDelay', 'timing'),
+                            ('DciGain', 'dci'), ('AcvGain', 'ac')]:
+            v.search.set(name)
+            v.tabs.select(v.guide)
+            self.root.update()
+            self.assertEqual(v.guide.topic, topic)
+            expected = set(linked_indices(v.rows, topic))
+            shown = {int(i) for i in v.guide.table.get_children()}
+            self.assertTrue(shown <= expected)
+            if topic != 'ac':
+                self.assertEqual(shown, expected)
+            v.tabs.select(v.values_tab)
+            self.root.update()
+        v.guide.show('ac')
+        filter_links = [i for i in v.guide.table.get_children()
+                        if v.rows[int(i)]['meaning']['family'] in ('flatness', 'lp')]
+        self.assertEqual(len(filter_links), 13)
+        target = filter_links[0]
+        v.guide.table.selection_set(target)
+        v.guide.open_selected()
+        self.assertEqual(v.table.selection(), (target,))
+        self.assertTrue(v.table.item(v.table.parent(target), 'open'))
+
     def test_plot_modes_and_invalid_frequency(self):
         v = self.viewer
         self.assertEqual(len(v.vectors), 13)
+        self.assertIn('cycles per coefficient-index step', v.max_x_label.cget('text'))
+        v.max_x.set('10000')
+        v._draw()
+        self.assertTrue(any('coefficient-index step span' in v.canvas.itemcget(item, 'text')
+                            for item in v.canvas.find_all() if v.canvas.type(item) == 'text'))
         v.vector.set('Acv100mVFlatnessCoefs')
         v.mode.set('APP11 2.43 image1 cascade (nominal Hz)')
         self.assertEqual(len(v.curve), 4097)
+        self.assertIn('frequency in Hz', v.max_x_label.cget('text'))
         self.assertIn('72 G3/event', v.scope.cget('text'))
         v.max_x.set('100000')
         v._draw()
@@ -64,10 +134,46 @@ class CalViewerTests(unittest.TestCase):
         v.max_x.set('nan')
         v._draw()
         self.assertFalse(v.canvas.find_withtag('response'))
+        self.assertTrue(any('full Hz span' in v.canvas.itemcget(item, 'text')
+                            for item in v.canvas.find_all() if v.canvas.type(item) == 'text'))
         v.vector.set('AcvLpFilter')
         self.assertEqual(v.curve, [])
         v.mode.set('Coefficient index')
         self.assertEqual(len(v.curve), 2049)
+
+    def test_calculation_and_use_is_optional_and_family_specific(self):
+        v = self.viewer
+        v.search.set('DcvGain10')
+        self.assertNotIn('How it is used', v.detail.get('1.0', 'end'))
+        v.lifecycle.set(True)
+        v._select()
+        details = v.detail.get('1.0', 'end')
+        self.assertIn('How it is used', details)
+        self.assertIn('g = G / T', details)
+        self.assertIn('AdcQuad', details)
+        self.assertNotIn('getCalCoeffs @', details)
+        v.technical.set(True)
+        v._select()
+        self.assertIn('getCalCoeffs @0x314FE8', v.detail.get('1.0', 'end'))
+        v.search.set('HeaterGain')
+        details = v.detail.get('1.0', 'end')
+        self.assertIn('divides by HeaterGain', details)
+        self.assertNotIn('g = G / T', details)
+        self.assertNotIn('no detailed card', details)
+
+    def test_adc_lifecycle_hides_research_details_by_default(self):
+        v = self.viewer
+        v.search.set('Adc_LutGain[DCV]')
+        v.lifecycle.set(True)
+        v._select()
+        detail = v.detail.get('1.0', 'end')
+        self.assertIn('feedbackLutGainTune', detail)
+        self.assertIn('0x0100', detail)
+        self.assertNotIn('Evidence:', detail)
+        self.assertNotIn('research/', detail)
+        v.technical.set(True)
+        v._select()
+        self.assertIn('calculateRegValues @0x26446C', v.detail.get('1.0', 'end'))
 
     def test_delay_reference_from_both_cal_fields(self):
         v = self.viewer

@@ -61,7 +61,7 @@ class CalHistoryViewerTests(unittest.TestCase):
         self.assertEqual(view.selected.get(), 'A0')
         self.assertEqual(tuple(view.reference_box['values']), ('A0', 'A1'))
         self.assertEqual(len(view.changes_table.get_children()), 2)
-        self.assertIn('2 changed / 1072 values', view.change_count.cget('text'))
+        self.assertIn('2 changed overall / 1072 total', view.change_count.cget('text'))
         self.assertTrue(all('changed' in view.changes_table.item(iid, 'tags')
                             for iid in view.changes_table.get_children()))
         self.assertTrue(any('Bytes differ' in view.changes_table.item(iid, 'values')[3]
@@ -86,6 +86,22 @@ class CalHistoryViewerTests(unittest.TestCase):
             view._open_slot()
             cal_viewer.assert_called_once()
             self.assertEqual(cal_viewer.call_args.args[2], view.by_id['A1']['report'])
+
+    def test_changes_can_open_each_slot_at_selected_coefficient(self):
+        view = self.viewer(make_history())
+        with patch('utility3441x.cal_history_viewer.CalViewer') as cal_viewer:
+            view.reference.set('A1')
+            coefficient = int(view.changes_table.get_children()[0])
+            view.changes_table.selection_set(str(coefficient))
+            view._open_reference()
+            cal_viewer.assert_called_once_with(view, 'saved_nor.bin [A1]', view.by_id['A1']['report'])
+            cal_viewer.return_value._navigate_coefficient.assert_called_once_with(coefficient)
+            cal_viewer.reset_mock()
+            view.selected.set('A0')
+            view.changes_table.selection_set(str(coefficient))
+            view._open_selected()
+            cal_viewer.assert_called_once_with(view, 'saved_nor.bin [A0]', view.by_id['A0']['report'])
+            cal_viewer.return_value._navigate_coefficient.assert_called_once_with(coefficient)
 
     def test_one_or_zero_comparable_slots(self):
         one = self.viewer(make_history(second=False))

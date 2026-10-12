@@ -336,6 +336,13 @@ class VisaInstrument:
             payload = bytes(self._inst.read_bytes(length))
             if len(payload) != length:
                 raise RuntimeError(f"short IEEE block {len(payload)}/{length}")
+            # Programmer's Reference, SCPI Command Terminators: consume the
+            # response NL before sending the next command, including block queries.
+            terminator = bytes(self._inst.read_bytes(1))
+            if terminator == b'\r':
+                terminator += bytes(self._inst.read_bytes(1))
+            if terminator not in (b'\n', b'\r\n'):
+                raise RuntimeError(f'Unexpected binary response terminator {terminator!r}')
             return payload
         finally:
             self._inst.read_termination = old_termination
@@ -346,6 +353,14 @@ class VisaInstrument:
         if not report["checksumValid"]:
             raise RuntimeError("CAL payload was received but its checksum failed")
         return payload, report
+
+    def write_calibration(self, payload: bytes) -> None:
+        """Send one validated definite-length CAL object; never retry a write."""
+        from .cal_restore import cal_write_frame
+        frame = cal_write_frame(payload)
+        written = self._inst.write_raw(frame)
+        if written != len(frame):
+            raise RuntimeError(f'Ambiguous CAL short write {written}/{len(frame)}; retry is forbidden.')
 
     def collect_identity_snapshot(self) -> FreshInstrumentSnapshot:
         identity = self.identity()

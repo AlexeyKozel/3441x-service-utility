@@ -143,3 +143,34 @@ def cascade_response(flatness: Any, lp: Any, kind: str,
         db = 20 * math.log10(magnitude) if magnitude else float("-inf")
         result.append((frequency, db))
     return result
+
+
+def impulse_response(taps: Any) -> list[tuple[float, float]]:
+    """DC-normalized single-vector impulse response, indexed by coefficient."""
+    coeffs = _validate_taps(taps)
+    total = sum(coeffs)
+    if not math.isfinite(total):
+        raise ValueError('Nonfinite coefficient sum')
+    result = [(float(i), c / total) for i, c in enumerate(coeffs)]
+    if any(not math.isfinite(y) for _, y in result):
+        raise ValueError('Nonfinite normalized impulse response')
+    return result
+
+
+def cascade_impulse_response(flatness: Any, lp: Any, kind: str) -> list[tuple[float, float]]:
+    """Linear flatness/LP convolution; nominal microseconds, no FPGA pipeline latency."""
+    if kind == 'acv':
+        period, stride = CONDITIONAL_ACV_EVENT_PERIOD_G3, 2
+    elif kind == 'aci':
+        period, stride = CONDITIONAL_ACI_EVENT_PERIOD_G3, 7
+    else:
+        raise ValueError("kind must be 'acv' or 'aci'")
+    flat = [y for _, y in impulse_response(flatness)]
+    lowpass = [y for _, y in impulse_response(lp)]
+    coeffs = [0.0] * (stride * (len(flat) - 1) + len(lowpass))
+    for i, a in enumerate(flat):
+        for j, b in enumerate(lowpass):
+            coeffs[stride * i + j] += a * b
+    if any(not math.isfinite(y) for y in coeffs):
+        raise ValueError('Nonfinite cascade impulse response')
+    return [(i * period * 1e6 / CONDITIONAL_G3_HZ, y) for i, y in enumerate(coeffs)]

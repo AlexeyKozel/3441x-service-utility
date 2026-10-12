@@ -10,7 +10,7 @@ from .cal_viewer import CalViewer
 
 
 class CalHistoryViewer(tk.Toplevel):
-    """Inspect one saved NOR image's CAL slots without implying chronology."""
+    """Inspect saved NOR or standalone CAL journal without implying chronology."""
 
     def __init__(self, parent, path: str, history: dict):
         super().__init__(parent)
@@ -36,10 +36,13 @@ class CalHistoryViewer(tk.Toplevel):
         self.tabs.pack(fill='both', expand=True, padx=10, pady=5)
         slots_tab = ttk.Frame(self.tabs, padding=8)
         changes_tab = ttk.Frame(self.tabs, padding=8)
+        trends_tab = ttk.Frame(self.tabs, padding=8)
         self.tabs.add(slots_tab, text='Slots')
         self.tabs.add(changes_tab, text='Changes')
+        self.tabs.add(trends_tab, text='Slot trends')
         self._slots_ui(slots_tab)
         self._changes_ui(changes_tab)
+        self._trends_ui(trends_tab)
 
     def _slots_ui(self, frame):
         ttk.Label(frame, text='All physical slots remain visible. Incomplete or invalid '
@@ -132,6 +135,20 @@ class CalHistoryViewer(tk.Toplevel):
         ttk.Entry(filters, textvariable=self.search, width=36).pack(side='left')
         self.change_count = ttk.Label(filters)
         self.change_count.pack(side='right')
+        inspect = ttk.Frame(frame)
+        inspect.pack(fill='x', pady=(0, 7))
+        self.inspect_reference_button = ttk.Button(
+            inspect, text='Inspect reference CAL', command=self._open_reference)
+        self.inspect_reference_button.pack(side='left')
+        self.inspect_selected_button = ttk.Button(
+            inspect, text='Inspect selected CAL', command=self._open_selected)
+        self.inspect_selected_button.pack(side='left', padx=6)
+        self.compare_filters_button = ttk.Button(inspect, text='Compare filter curves',
+                                                 command=self._compare_filters)
+        self.compare_filters_button.pack(side='left', padx=6)
+        if not self.comparable_ids:
+            self.inspect_reference_button.state(['disabled'])
+            self.inspect_selected_button.state(['disabled'])
         table_frame = ttk.Frame(frame)
         table_frame.pack(fill='both', expand=True)
         table_frame.columnconfigure(0, weight=1)
@@ -139,8 +156,8 @@ class CalHistoryViewer(tk.Toplevel):
         self.changes_table = ttk.Treeview(table_frame,
                                           columns=('parameter', 'reference', 'selected', 'delta'),
                                           show='headings', selectmode='browse')
-        for key, title, width in [('parameter', 'Parameter', 370), ('reference', 'Reference', 210),
-                                  ('selected', 'Selected', 210), ('delta', 'Raw delta', 190)]:
+        for key, title, width in [('parameter', 'Parameter', 370), ('reference', 'Reference display', 210),
+                                  ('selected', 'Selected display', 210), ('delta', 'Raw delta', 190)]:
             self.changes_table.heading(key, text=title)
             self.changes_table.column(key, width=width, minwidth=65)
         self.changes_table.tag_configure('changed', background='#fff2ce')
@@ -151,7 +168,8 @@ class CalHistoryViewer(tk.Toplevel):
         horizontal = ttk.Scrollbar(table_frame, orient='horizontal', command=self.changes_table.xview)
         horizontal.grid(row=1, column=0, sticky='ew')
         self.changes_table.configure(xscrollcommand=horizontal.set)
-        self.change_note = ttk.Label(frame, text='Comparisons use stored values and raw bytes; '
+        self.change_note = ttk.Label(frame, text='Reference and Selected show established CAL display interpretations. '
+                                     'Raw bytes and raw delta remain available in the row details; '
                                      'a changed marker does not judge calibration correctness.',
                                      wraplength=1000)
         self.change_note.pack(anchor='w', pady=(7, 0))
@@ -169,6 +187,10 @@ class CalHistoryViewer(tk.Toplevel):
         self.comparison_rows = []
         self.raw_detail.configure(text='')
         reference, selected = self.reference.get(), self.selected.get()
+        self.inspect_reference_button.configure(state='normal' if reference in self.comparable_ids else 'disabled')
+        self.inspect_selected_button.configure(state='normal' if selected in self.comparable_ids else 'disabled')
+        self.compare_filters_button.configure(state='normal' if reference in self.comparable_ids
+                                              and selected in self.comparable_ids else 'disabled')
         if reference not in self.comparable_ids or selected not in self.comparable_ids:
             self.change_count.configure(text='0 values')
             self.change_note.configure(text='Choose two comparable slots to inspect stored CAL changes.')
@@ -190,7 +212,7 @@ class CalHistoryViewer(tk.Toplevel):
                                               row['delta']),
                                       tags=('changed',) if row['changed'] else ())
             visible += 1
-        self.change_count.configure(text=f'{visible} shown / {changed} changed / {len(rows)} values')
+        self.change_count.configure(text=f'{visible} shown / {changed} changed overall / {len(rows)} total')
         self.change_note.configure(text='* marks a raw stored-value change, including distinct '
                                    'floating-point encodings. Physical slot order does not establish '
                                    'when the change occurred or whether a value is correct.')
@@ -200,7 +222,38 @@ class CalHistoryViewer(tk.Toplevel):
         if not selection:
             return
         row = self.comparison_rows[int(selection[0])]
-        self.raw_detail.configure(text=f"{row['name']} — stored reference: {row['referenceRaw']}; "
+        self.raw_detail.configure(text=f"{row['name']} — reference display: {row['reference']}; "
+                                  f"selected display: {row['selected']}. "
+                                  f"Stored reference: {row['referenceRaw']}; "
                                   f"stored selected: {row['selectedRaw']}. "
                                   f"Bytes: {row['referenceHex']} → {row['selectedHex']}. "
                                   'Raw delta = selected minus reference, in stored units.')
+
+    def _open_reference(self):
+        return self._open_comparison_slot(self.reference.get())
+
+    def _compare_filters(self):
+        reference, selected = self.reference.get(), self.selected.get()
+        if reference not in self.comparable_ids or selected not in self.comparable_ids:
+            return
+        from .cal_filter_compare import FilterComparison
+        return FilterComparison(self, self.by_id[reference]['report'], self.by_id[selected]['report'],
+                                f'Reference {reference}', f'Selected {selected}')
+
+    def _open_selected(self):
+        return self._open_comparison_slot(self.selected.get())
+
+    def _open_comparison_slot(self, slot_id):
+        slot = self.by_id.get(slot_id)
+        if not slot or not slot.get('comparable') or slot.get('report') is None:
+            return
+        viewer = CalViewer(self, f"{self.path} [{slot_id}]", slot['report'])
+        selection = self.changes_table.selection()
+        if selection:
+            viewer._navigate_coefficient(int(selection[0]))
+        return viewer
+
+    def _trends_ui(self, frame):
+        from .cal_history_plot import CalHistoryPlot
+        self.trend_plot = CalHistoryPlot(frame, self.history, self.reference)
+        self.trend_plot.pack(fill='both', expand=True)

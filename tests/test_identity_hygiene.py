@@ -12,7 +12,7 @@ from utility3441x.instrument import VisaInstrument, parse_idn  # noqa: E402
 from utility3441x.offline import NOR_BASE  # noqa: E402
 
 
-CLEAN_IDN = "Agilent Technologies,34411A,MY48005929,2.43-2.40-0.09-46-09"
+CLEAN_IDN = "Agilent Technologies,34411A,TEST000002,2.43-2.40-0.09-46-09"
 
 # Exactly what a service backup recorded as the firmware revision, after an
 # aborted batched read left its remaining values queued in the instrument and
@@ -26,7 +26,7 @@ class IdnPollutionTests(unittest.TestCase):
     def test_a_clean_reply_parses(self):
         parsed = parse_idn(CLEAN_IDN)
         self.assertEqual(parsed["model"], "34411A")
-        self.assertEqual(parsed["serial"], "MY48005929")
+        self.assertEqual(parsed["serial"], "TEST000002")
         self.assertEqual(parsed["firmware"], "2.43-2.40-0.09-46-09")
 
     def test_concatenated_response_data_is_rejected(self):

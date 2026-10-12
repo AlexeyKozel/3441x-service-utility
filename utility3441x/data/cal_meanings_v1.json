@@ -7,43 +7,2187 @@
     "row_boundary": "A family-level description does not by itself establish the consumer of every individual CAL row."
   },
   "families": {
-    "AciGain": {"summary": "Selected ACI range gain scales amplitude in the ordinary result path.", "usage_status": "established", "limitations": ["Noise-calibration, self-test, overload and rolldown branches can change the downstream path."], "evidence": [{"path": "docs/CAL_AC_SCALAR_SELECTION_RU.md", "scope": "APP11 bounded ordinary ACI result path"}]},
-    "AciSqNoise": {"summary": "Selected ACI range squared-noise term adjusts the second moment before the ordinary result is assembled.", "usage_status": "established", "limitations": ["Noise-calibration and self-test use separate branches."], "evidence": [{"path": "docs/CAL_AC_SCALAR_SELECTION_RU.md", "scope": "APP11 bounded ordinary ACI result path"}]},
-    "AcvGain": {"summary": "Selected ACV range gain scales the ordinary result and participates in overload and rolldown handling.", "usage_status": "established", "limitations": ["The debug overload-disable branch bypasses ordinary overload and rolldown operations."], "evidence": [{"path": "docs/CAL_AC_SCALAR_SELECTION_RU.md", "scope": "APP11 bounded ordinary ACV result path"}]},
-    "AcvMedIirDenomCoef": {"summary": "MED low-frequency calibration stores a fitted IIR denominator; the software recurrence consumes its Q20 coefficients.", "usage_status": "established", "limitations": ["The two fit points do not establish a physical frequency axis, sampling cadence, or complete transfer response."], "evidence": [{"path": "research/cal_app11_iir_20261006/REPORT_RU.md", "scope": "APP11 bounded MED fit and software recurrence"}]},
-    "AcvMedIirNumeratorCoef": {"summary": "MED low-frequency calibration stores a fitted numerator; the normalizer derives coefficient constants and their squares from it.", "usage_status": "established", "limitations": ["A physical transfer response and sampling cadence are outside this software evidence."], "evidence": [{"path": "docs/CAL_APP11_AC_NORMALIZATION_RU.md", "scope": "APP11 bounded MED coefficient path"}]},
-    "AcvSlowDcGainSquared": {"summary": "A named SLOW CAL state has a getter; a separate Compute DC-gain setter stores its argument plus one.", "usage_status": "open", "limitations": ["A path from this CAL state to that setter or a numeric consumer in the checked ordinary SLOW path has not been established.", "This does not establish that the state is globally unused."], "evidence": [{"path": "research/cal_app11_ac_aux_20261006/REPORT_RU.md", "scope": "APP11 separate state/getter and Compute setter; connection open"}]},
-    "AcvSlowIirDenomCoef": {"summary": "SLOW low-frequency calibration stores a fitted IIR denominator; the software recurrence consumes its Q20 coefficients.", "usage_status": "established", "limitations": ["The two fit points do not establish a physical frequency axis, sampling cadence, or complete transfer response."], "evidence": [{"path": "research/cal_app11_iir_20261006/REPORT_RU.md", "scope": "APP11 bounded SLOW fit and software recurrence"}]},
-    "AcvSlowIirNumeratorCoef": {"summary": "SLOW low-frequency calibration stores a fitted numerator; the normalizer derives coefficient constants and their squares from it.", "usage_status": "established", "limitations": ["A physical transfer response and sampling cadence are outside this software evidence."], "evidence": [{"path": "docs/CAL_APP11_AC_NORMALIZATION_RU.md", "scope": "APP11 bounded SLOW coefficient path"}]},
-    "AcvSlowNoiseGainSquared": {"summary": "A SLOW or MED noise-gain state selected by mode; its runtime setter stores input plus one and its getter returns state minus one.", "usage_status": "established", "limitations": ["The setter/getter transformation alone does not describe the complete AC output path."], "evidence": [{"path": "research/cal_app11_ac_aux_20261006/REPORT_RU.md", "scope": "APP11 bounded setter/getter path"}]},
-    "AcvSqNoise": {"summary": "Selected ACV range squared-noise term adjusts the second moment before the ordinary result is assembled.", "usage_status": "established", "limitations": ["This is distinct from the mode-selected AcvSlowNoiseGainSquared state."], "evidence": [{"path": "docs/CAL_AC_SCALAR_SELECTION_RU.md", "scope": "APP11 bounded ordinary ACV result path"}]},
-    "AdcQuad": {"summary": "The selected DCV quadratic coefficient contributes a square term when the quadratic mode byte is enabled.", "usage_status": "established", "limitations": ["Other modes use the affine path; overload guards can bypass the final consumer."], "evidence": [{"path": "research/cal_app11_dcv_20261006/REPORT_RU.md", "scope": "APP11 bounded DCV quadratic branch"}]},
-    "Adc_DcOffset": {"summary": "DcOffset D sets the common level of the 64-entry alternating ADC offset LUT: D+P and D−P.", "usage_status": "established", "limitations": ["The LUT affects feedback-code history; D is not directly added to the final reading."], "evidence": [{"path": "research/cal_app11_adc_20261006/REPORT_RU.md", "scope": "APP11 ADC getter and register calculation"}, {"path": "docs/CAL_ADC_PHYSICAL_MEANING_RU.md", "scope": "Checked APP10/APP11 arithmetic and bounded ADC interpretation"}]},
-    "Adc_FineMergeGain": {"summary": "FineMergeGain is rounded after multiplication by 65536 and reduced to low 10 bits for the merge field that scales the fine-code difference.", "usage_status": "established", "limitations": ["Quantization and low-bit selection matter; the stored double is not a direct volts-per-count reading gain."], "evidence": [{"path": "research/cal_app11_adc_20261006/REPORT_RU.md", "scope": "APP11 ADC getter and register calculation"}, {"path": "docs/CAL_ADC_PHYSICAL_MEANING_RU.md", "scope": "Checked APP10/APP11 arithmetic and bounded ADC interpretation"}]},
-    "Adc_FineSamplOffset": {"summary": "FineSamplOffset is transformed with the decision count into the fine-trigger register; in the ordinary positive domain F is (trunc(offset)+N−2) remainder N.", "usage_status": "established", "limitations": ["The stored offset is not itself the trigger register value; the expression has a bounded input domain."], "evidence": [{"path": "research/cal_app11_adc_20261006/REPORT_RU.md", "scope": "APP11 ADC getter and register calculation"}, {"path": "docs/CAL_ADC_PHYSICAL_MEANING_RU.md", "scope": "Checked APP10/APP11 arithmetic and bounded ADC interpretation"}]},
-    "Adc_Jitter": {"summary": "Jitter supplies the low-three-bit parameter of a separate deterministic digital J generator.", "usage_status": "established", "limitations": ["The CAL scalar, control bits and generated signed J are distinct; J is already included in feedback code C, not an extra addition to the reading or a clock-jitter measure."], "evidence": [{"path": "research/cal_app11_adc_20261006/REPORT_RU.md", "scope": "APP11 ADC getter and register calculation"}, {"path": "docs/CAL_ADC_PHYSICAL_MEANING_RU.md", "scope": "Bounded downstream meaning of ADC J"}]},
-    "Adc_LutGain": {"summary": "LutGain scales a 256-entry coarse-indexed LUT; each entry is rounded and clamped to the integer range −64 through 63.", "usage_status": "established", "limitations": ["The table changes feedback-code selection; it does not independently multiply a completed reading."], "evidence": [{"path": "research/cal_app11_adc_20261006/REPORT_RU.md", "scope": "APP11 ADC getter and register calculation"}, {"path": "docs/CAL_ADC_PHYSICAL_MEANING_RU.md", "scope": "Checked APP10/APP11 arithmetic and bounded ADC interpretation"}]},
-    "Adc_N_Decisions": {"summary": "N_Decisions sets the ADC decision count N and a software cycle field of N−1.", "usage_status": "established", "limitations": ["It also enters trigger positions and should be read with the other timing fields."], "evidence": [{"path": "research/cal_app11_adc_20261006/REPORT_RU.md", "scope": "APP11 ADC getter and register calculation"}, {"path": "docs/CAL_ADC_PHYSICAL_MEANING_RU.md", "scope": "Checked APP10/APP11 ADC timing interpretation"}]},
-    "Adc_Nf_Slope": {"summary": "Nf_Slope forms decision-window half-width H by truncating slope/2; H enters the calculated coarse, start and end positions.", "usage_status": "established", "limitations": ["Its meaning depends on the decision count and fine-aperture position; it is not a result multiplier."], "evidence": [{"path": "research/cal_app11_adc_20261006/REPORT_RU.md", "scope": "APP11 ADC getter and register calculation"}, {"path": "docs/CAL_ADC_PHYSICAL_MEANING_RU.md", "scope": "Checked APP10/APP11 ADC timing interpretation"}]},
-    "Adc_PiOffset": {"summary": "PiOffset P sets the alternating component of the ADC offset LUT: D+P and D−P.", "usage_status": "established", "limitations": ["It is not a direct reading offset or an established cancellation of the analog geometry term."], "evidence": [{"path": "research/cal_app11_adc_20261006/REPORT_RU.md", "scope": "APP11 ADC getter and register calculation"}, {"path": "docs/CAL_ADC_PHYSICAL_MEANING_RU.md", "scope": "Bounded downstream ADC offset interpretation"}]},
-    "CapOffset": {"summary": "Terminal-selected capacitance offset, stored in farads, is subtracted in the software capacitance result path.", "usage_status": "established", "limitations": ["Software units do not establish calibration accuracy or identify a particular external capacitance."], "evidence": [{"path": "research/cal_app11_cap_dependencies_20261006/RESULT_RU.md", "scope": "APP11 bounded CAP getter and result calculation"}, {"path": "research/cal_cap_units_20261008/si_evidence.json", "scope": "APP11 CAP range scale, unit labels and unchanged result transfer"}]},
-    "CurrentSrcDelay": {"summary": "For the checked compensated low-range resistance path, software selects the unsigned maximum of this state and PacketCounts.McDelay as a count of short DC MeanPacket records before NPLC accumulation. APP11 minimum-sample-time arithmetic uses an initialized scale of 19.952941176 microseconds per count.", "usage_status": "established", "limitations": ["The time estimate describes this CAL count only; a later trigger-delay maximum can extend the wait. One wait is not the complete autozero cycle. This software scale is not a measured hardware clock."], "evidence": [{"path": "research/cal_heater_delay_20261006/REPORT_RU.md", "scope": "APP11 bounded software timing-state path"}, {"path": "research/cal_mc_mz_time_scale_20261008/evidence.json", "scope": "APP11 RES minimum-sample-time arithmetic and initialized seconds/count scale"}]},
-    "DciGain": {"summary": "One of six DCI range gains is selected and scaled by total packet weight in the common setter.", "usage_status": "established", "limitations": ["Line-frequency and row-index selection follow the checked software path; an index accepted by its guard is not necessarily a valid NPLC enum."], "evidence": [{"path": "research/cal_app11_dci_res_20261006/REPORT_RU.md", "scope": "APP11 bounded DCI range and setter path"}]},
-    "DciOff": {"summary": "DCI range and terminal selection choose a front or rear offset, which the common setter scales by total packet weight with sign-dependent rounding.", "usage_status": "established", "limitations": ["The interpretation applies to the checked range and terminal branches."], "evidence": [{"path": "research/cal_app11_dci_res_20261006/REPORT_RU.md", "scope": "APP11 bounded DCI offset path"}]},
-    "DcvGain": {"summary": "One of five DCV range gains is selected and scaled by total packet weight in the common setter.", "usage_status": "established", "limitations": ["A row index accepted by the software guard is not necessarily a valid NPLC enum."], "evidence": [{"path": "research/cal_app11_dcv_20261006/REPORT_RU.md", "scope": "APP11 bounded DCV range and setter path"}]},
-    "DcvOff": {"summary": "DCV range and terminal selection choose a front or rear offset, which the common setter scales by total packet weight with sign-dependent rounding.", "usage_status": "established", "limitations": ["The CAP dependency applies only to two specified 10 V offset members; it is not a property of every row."], "evidence": [{"path": "research/cal_app11_dcv_20261006/REPORT_RU.md", "scope": "APP11 bounded DCV offset path"}]},
-    "Divider10M": {"summary": "A conditional correction for ordinary high-range resistance results, applied below its checked guard.", "usage_status": "established", "limitations": ["Above the guard the path selects overload; a global override changes the additional upper limit."], "evidence": [{"path": "research/cal_app11_dci_res_20261006/REPORT_RU.md", "scope": "APP11 bounded ordinary RES range 6/7 path"}]},
-    "FreqGain": {"summary": "Frequency counter scale used in software frequency and period calculations, and in the CAP denominator path.", "usage_status": "established", "limitations": ["Counter rollover and physical timing behavior are outside the checked chain."], "evidence": [{"path": "research/cal_app11_freq_pwm_20261006/REPORT_RU.md", "scope": "APP11 bounded frequency, period and CAP calculations"}]},
-    "HeaterGain": {"summary": "Heater drive calculation divides its positive-target square-root term by HeaterGain before code scaling.", "usage_status": "established", "limitations": ["Nonpositive target power and voltage-compensation guards use separate branches; hardware output is unverified."], "evidence": [{"path": "research/cal_heater_delay_20261006/REPORT_RU.md", "scope": "APP11 bounded heater-code calculation"}]},
-    "HeaterRes": {"summary": "Heater drive calculation multiplies HeaterRes by positive target power inside the square-root term.", "usage_status": "established", "limitations": ["Nonpositive target power and voltage-compensation guards use separate branches; hardware output is unverified."], "evidence": [{"path": "research/cal_heater_delay_20261006/REPORT_RU.md", "scope": "APP11 bounded heater-code calculation"}]},
-    "McDelay": {"summary": "A CAL-state change raises an APP11 update event that can reach register writes.", "usage_status": "open", "limitations": ["Those writes are not proof of numeric use: PacketCounts.McDelay comes from mcDelayTable, with no established link from this CAL value."], "evidence": [{"path": "research/cal_heater_delay_20261006/REPORT_RU.md", "scope": "APP11 event-to-write path; numeric CAL-to-table link open"}]},
-    "MzDelay": {"summary": "A CAL-state change raises an APP11 update event that can reach register writes.", "usage_status": "open", "limitations": ["Those writes are not proof of numeric use: PacketCounts.MzDelay comes from mzDelayTable, with no established link from this CAL value."], "evidence": [{"path": "research/cal_heater_delay_20261006/REPORT_RU.md", "scope": "APP11 event-to-write path; numeric CAL-to-table link open"}]},
-    "PrechargePwm": {"summary": "A software PWM control value converted through integer and low-16-bit steps before an upper clamp and control write.", "usage_status": "established", "limitations": ["Conversion order is material: this is not a simple clamp to 0–255, and no lower clamp is shown; physical PWM output is unverified."], "evidence": [{"path": "research/cal_app11_freq_pwm_20261006/REPORT_RU.md", "scope": "APP11 bounded digital writer path"}]},
-    "Res4Gain": {"summary": "Four-wire resistance selects a gain bank by range and offset-compensation branch, then scales by total packet weight.", "usage_status": "established", "limitations": ["CAP dependence is limited to five named members; high ranges also have a conditional Divider10M correction."], "evidence": [{"path": "research/cal_app11_dci_res_20261006/REPORT_RU.md", "scope": "APP11 bounded four-wire RES path"}]},
-    "Res4Off": {"summary": "Four-wire resistance selects an offset bank by range, terminals and offset-compensation branch, then scales by total packet weight with sign-dependent rounding.", "usage_status": "established", "limitations": ["Front/rear and offset-compensation states are separate banks."], "evidence": [{"path": "research/cal_app11_dci_res_20261006/REPORT_RU.md", "scope": "APP11 bounded four-wire RES path"}]},
-    "ResGain": {"summary": "Two-wire resistance selects an ordinary or offset-compensated gain bank by range, then scales by total packet weight.", "usage_status": "established", "limitations": ["The ordinary high-range path may also apply a guarded Divider10M correction."], "evidence": [{"path": "research/cal_app11_dci_res_20261006/REPORT_RU.md", "scope": "APP11 bounded two-wire RES path"}]},
-    "ResOff": {"summary": "Two-wire resistance selects an offset bank by range, terminals and offset-compensation branch, then scales by total packet weight with sign-dependent rounding.", "usage_status": "established", "limitations": ["Front/rear and offset-compensation states are separate banks."], "evidence": [{"path": "research/cal_app11_dci_res_20261006/REPORT_RU.md", "scope": "APP11 bounded two-wire RES path"}]},
-    "flatness": {"summary": "Per-range ACI and ACV FIR coefficient vectors passed as signed low-16-bit words through the ordinary firmware writer.", "usage_status": "established", "limitations": ["These are vectors, not individually known frequency taps; firmware writes do not prove FPGA acceptance or an instrument frequency response."], "evidence": [{"path": "research/cal_app11_fir_bindings_20261006/REPORT_RU.md", "scope": "APP11 770-row source-to-holder and ordinary writer binding"}]},
-    "lp": {"summary": "Shared ACI and ACV low-pass FIR coefficient vectors passed as signed low-16-bit words through the ordinary firmware writer.", "usage_status": "established", "limitations": ["These are vectors, not individually known frequency taps; firmware writes do not prove FPGA acceptance or an instrument frequency response."], "evidence": [{"path": "research/cal_app11_fir_bindings_20261006/REPORT_RU.md", "scope": "APP11 140-row source-to-holder and ordinary writer binding"}]}
+    "AciGain": {
+      "summary": "Selected ACI range gain scales amplitude in the ordinary result path.",
+      "usage_status": "established",
+      "limitations": [
+        "Noise-calibration, self-test, overload and rolldown branches can change the downstream path."
+      ],
+      "evidence": [
+        {
+          "path": "docs/CAL_AC_SCALAR_SELECTION_RU.md",
+          "scope": "APP11 bounded ordinary ACI result path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "The checked APP11 material establishes the stored range state and its consumer, but does not trace a complete ACI gain-calibration producer from reference input through accepted sample to the writer. No producer formula is inferred from the ACV path or from a field name.",
+          "status": "OPEN",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+          ]
+        },
+        "application": {
+          "text": "The current ACI range selects one Gain entry. The ordinary MED/FAST result path forms a nonnegative power term, takes its square root, then multiplies by Gain before overload and rolldown handling. Noise-calibration and self-test branches have separate behavior.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "APP11 keeps six ACI range entries. The current range index selects the same position in the Gain and SqNoise vectors; the 3 A range is present for ACI. Selection here is software range selection, not proof of the active physical range on an instrument.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The checked sync path copies the selected CAL value into runtime result elements. How an imported CAL set causes every relevant object to refresh is not fully established; saving the current CAL group to NOR is a separate operation.",
+          "status": "PARTIAL",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md",
+            "docs/CAL_APP11_STATUS_RU.md"
+          ]
+        },
+        "related": {
+          "text": "AciSqNoise adjusts the second moment in the ordinary path before the result is assembled. Both values are selected by the same range index, but follow distinct arithmetic roles.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+          ]
+        }
+      }
+    },
+    "AciSqNoise": {
+      "summary": "Selected ACI range squared-noise term adjusts the second moment before the ordinary result is assembled.",
+      "usage_status": "established",
+      "limitations": [
+        "Noise-calibration and self-test use separate branches."
+      ],
+      "evidence": [
+        {
+          "path": "docs/CAL_AC_SCALAR_SELECTION_RU.md",
+          "scope": "APP11 bounded ordinary ACI result path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "A complete APP11 procedure that derives and writes each ACI SqNoise value has not been followed from calibration input to final writer. The consumer evidence does not establish how the stored numbers were obtained.",
+          "status": "OPEN",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+          ]
+        },
+        "application": {
+          "text": "The selected ACI SqNoise is passed to the MED/FAST result element and adjusts the second moment before ordinary result assembly. Noise-calibration and self-test branches are separate; this field is distinct from the ACV mode-selected noise-gain state.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "The current ACI range index selects one of six SqNoise entries from the ACI vector, using the same range index as AciGain.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The checked software sync copies the selected value into runtime result elements. Complete refresh behavior after external CAL import remains unresolved; CAL:STORE is separate NOR persistence.",
+          "status": "PARTIAL",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md",
+            "docs/CAL_APP11_STATUS_RU.md"
+          ]
+        },
+        "related": {
+          "text": "AciGain multiplies the ordinary amplitude after the power term is assembled. Shared range selection does not make Gain and SqNoise interchangeable.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+          ]
+        }
+      }
+    },
+    "AcvGain": {
+      "summary": "Selected ACV range gain scales the ordinary result and participates in overload and rolldown handling.",
+      "usage_status": "established",
+      "limitations": [
+        "The debug overload-disable branch bypasses ordinary overload and rolldown operations."
+      ],
+      "evidence": [
+        {
+          "path": "docs/CAL_AC_SCALAR_SELECTION_RU.md",
+          "scope": "APP11 bounded ordinary ACV result path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "The checked sources establish the selected ACV Gain state and downstream use, but do not trace the complete ACV range-gain calibration producer. AciGain or DC gain procedures are not substituted for it.",
+          "status": "OPEN",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+          ]
+        },
+        "application": {
+          "text": "The selected ACV range Gain multiplies the square root of the nonnegative ordinary power result. Overload and peak guards follow; below the rolldown threshold the ordinary branch applies an additional nonlinear reduction. A debug overload-disable branch follows a separate path.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "APP11 ACV has five range entries. The current range index selects Gain and SqNoise entries and passes them to the applicable SLOW and MED/FAST result elements. The literal high-range label is a software label, not a voltage rating.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "APP11 sync transfers the selected state to runtime setters. Full refresh after external CAL import remains open; a runtime update and CAL:STORE to NOR are separate steps.",
+          "status": "PARTIAL",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md",
+            "docs/CAL_APP11_STATUS_RU.md"
+          ]
+        },
+        "related": {
+          "text": "AcvSqNoise changes the second moment before the ordinary output stage. SLOW/MED/FAST mode and debug flags affect downstream behavior, so Gain alone does not define a complete result.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+          ]
+        }
+      }
+    },
+    "AcvMedIirDenomCoef": {
+      "summary": "MED low-frequency calibration stores a fitted IIR denominator; the software recurrence consumes its Q20 coefficients.",
+      "usage_status": "established",
+      "limitations": [
+        "The two fit points do not establish a physical frequency axis, sampling cadence, or complete transfer response."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_iir_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded MED fit and software recurrence"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "For ordinary finite inputs with nonzero divisors and a nonnegative sqrt radicand, let q10=read1_10/read2_10 and q40=read1_40/read2_40 from the retained helper records, p=(q10/q40)^2, a=2π*x10, b=2π*x40, and r=sqrt((p/(a*a)-1/(b*b))/(1-p)). With K=base[0x60], APP11 writes slow_num=med_num=K/r, slow_den=exp(-((8.94545*r-0.968)*K)/r), and med_den=exp(-((45.4573*r-5.0006)*K)/r). x is the call argument; points are retained only in the checked near-10 and near-40 windows. The helper payload meaning/units, K's units, actual call sequence, and physical fit interpretation remain OPEN; these are software expressions. This family stores med_den.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_iir_calculation_20261006/REPORT_RU.md"
+          ]
+        },
+        "application": {
+          "text": "The MED coefficient is converted to a signed Q20 recurrence coefficient by truncating a×2^20+0.5. The recurrence uses the low 64 bits of the product and arithmetic shifts. This is the checked software recurrence, not a measured filter response.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_iir_20261006/REPORT_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "The APP11 mode enum selects the MED numerator and denominator path for the MED branch. The two-point calibration fit also writes a distinct SLOW denominator; it is not one shared coefficient across both modes.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_iir_20261006/REPORT_RU.md",
+            "research/cal_app11_iir_calculation_20261006/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The named state is written by the calibration routine and is consumed by the software IIR configuration path. Complete refresh after external CAL import remains unresolved.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_iir_20261006/REPORT_RU.md",
+            "docs/CAL_APP11_STATUS_RU.md"
+          ]
+        },
+        "related": {
+          "text": "AcvMedIirNumeratorCoef is fitted from the same two-point operation. The denominator controls the checked recurrence; the numerator supplies separate squared and unsquared scales in result processing.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_iir_20261006/REPORT_RU.md",
+            "docs/CAL_APP11_AC_NORMALIZATION_RU.md"
+          ]
+        }
+      }
+    },
+    "AcvMedIirNumeratorCoef": {
+      "summary": "MED low-frequency calibration stores a fitted numerator; the normalizer derives coefficient constants and their squares from it.",
+      "usage_status": "established",
+      "limitations": [
+        "A physical transfer response and sampling cadence are outside this software evidence."
+      ],
+      "evidence": [
+        {
+          "path": "docs/CAL_APP11_AC_NORMALIZATION_RU.md",
+          "scope": "APP11 bounded MED coefficient path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "For ordinary finite inputs with nonzero divisors and a nonnegative sqrt radicand, let q10=read1_10/read2_10 and q40=read1_40/read2_40 from the retained helper records, p=(q10/q40)^2, a=2π*x10, b=2π*x40, and r=sqrt((p/(a*a)-1/(b*b))/(1-p)). With K=base[0x60], APP11 writes slow_num=med_num=K/r, slow_den=exp(-((8.94545*r-0.968)*K)/r), and med_den=exp(-((45.4573*r-5.0006)*K)/r). x is the call argument; points are retained only in the checked near-10 and near-40 windows. The helper payload meaning/units, K's units, actual call sequence, and physical fit interpretation remain OPEN; these are software expressions. This family stores the shared numerator K/r.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_iir_calculation_20261006/REPORT_RU.md"
+          ]
+        },
+        "application": {
+          "text": "The APP11 normalizer derives A=(16/147³)×N, C_unsq=A×2^-28, and C_sq=A²×256 in the observed operation order. These constants feed checked MED compensation calculations; they do not alone define a complete AC response.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_APP11_AC_NORMALIZATION_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "In APP11 sync, the MED mode branch selects AcvMedIirNumeratorCoef and passes it to the MED result element. Other enum branches do not call that same direct setter.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_ac_aux_20261006/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The calibration routine stores the named state; a later sync passes the selected value into runtime processing. Complete refresh after external CAL import remains unresolved.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_iir_calculation_20261006/REPORT_RU.md",
+            "research/cal_app11_ac_aux_20261006/REPORT_RU.md"
+          ]
+        },
+        "related": {
+          "text": "AcvMedIirDenomCoef is the paired fitted MED recurrence coefficient. The numerator also has a SLOW counterpart, and the stored numerator participates in both squared and unsquared software scales.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_iir_20261006/REPORT_RU.md",
+            "docs/CAL_APP11_AC_NORMALIZATION_RU.md"
+          ]
+        }
+      }
+    },
+    "AcvSlowDcGainSquared": {
+      "summary": "A named SLOW CAL state has a getter; a separate Compute DC-gain setter stores its argument plus one.",
+      "usage_status": "open",
+      "limitations": [
+        "A path from this CAL state to that setter or a numeric consumer in the checked ordinary SLOW path has not been established.",
+        "This does not establish that the state is globally unused."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_ac_aux_20261006/REPORT_RU.md",
+          "scope": "APP11 separate state/getter and Compute setter; connection open"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "A named APP11 state and getter exist, but the checked scans did not establish a runtime route from this state to its similarly named Compute setter or an ordinary SLOW consumer. Its producer and intended numeric role remain OPEN; the field is not declared unused.",
+          "status": "OPEN",
+          "references": [
+            "research/cal_app11_ac_aux_20261006/REPORT_RU.md"
+          ]
+        },
+        "application": {
+          "text": "A separate Compute setter adds 1.0 and stores its argument, and a matching getter subtracts 1.0. The checked ordinary SLOW operator does not read that internal field in its entry-reachable path. No link from the CAL state to this setter is established.",
+          "status": "OPEN",
+          "references": [
+            "research/cal_app11_ac_aux_20261006/REPORT_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "The state is registered as a named SLOW CAL value. A mode or range selection route from this state to a numeric consumer has not been established.",
+          "status": "OPEN",
+          "references": [
+            "research/cal_app11_ac_aux_20261006/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "CAL state construction and getter existence are proven, but no numeric update route from this CAL state to the separate Compute field is established. Event delivery or matching names do not close that gap.",
+          "status": "OPEN",
+          "references": [
+            "research/cal_app11_ac_aux_20261006/REPORT_RU.md"
+          ]
+        },
+        "related": {
+          "text": "AcvSlowNoiseGainSquared has a separate confirmed SLOW/MED mode route and adds one in the Compute setter. That evidence must not be transferred to AcvSlowDcGainSquared.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_ac_aux_20261006/REPORT_RU.md"
+          ]
+        }
+      }
+    },
+    "AcvSlowIirDenomCoef": {
+      "summary": "SLOW low-frequency calibration stores a fitted IIR denominator; the software recurrence consumes its Q20 coefficients.",
+      "usage_status": "established",
+      "limitations": [
+        "The two fit points do not establish a physical frequency axis, sampling cadence, or complete transfer response."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_iir_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded SLOW fit and software recurrence"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "For ordinary finite inputs with nonzero divisors and a nonnegative sqrt radicand, let q10=read1_10/read2_10 and q40=read1_40/read2_40 from the retained helper records, p=(q10/q40)^2, a=2π*x10, b=2π*x40, and r=sqrt((p/(a*a)-1/(b*b))/(1-p)). With K=base[0x60], APP11 writes slow_num=med_num=K/r, slow_den=exp(-((8.94545*r-0.968)*K)/r), and med_den=exp(-((45.4573*r-5.0006)*K)/r). x is the call argument; points are retained only in the checked near-10 and near-40 windows. The helper payload meaning/units, K's units, actual call sequence, and physical fit interpretation remain OPEN; these are software expressions. This family stores slow_den.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_iir_calculation_20261006/REPORT_RU.md"
+          ]
+        },
+        "application": {
+          "text": "The SLOW denominator is converted to a signed Q20 recurrence coefficient using truncation of a×2^20+0.5; the recurrence consumes low 64-bit products with arithmetic shifts. A complete physical transfer response and sampling cadence are not established.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_iir_20261006/REPORT_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "The APP11 SLOW enum branch selects the SLOW IIR configuration path, separate from the MED branch. Both denominator states are outputs of the same two-point fit routine.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_iir_20261006/REPORT_RU.md",
+            "research/cal_app11_iir_calculation_20261006/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The fit writes the named state and the software recurrence path consumes the coefficient. Complete refresh after external CAL import remains unresolved.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_iir_calculation_20261006/REPORT_RU.md",
+            "docs/CAL_APP11_STATUS_RU.md"
+          ]
+        },
+        "related": {
+          "text": "AcvSlowIirNumeratorCoef comes from the same fit operation and is normalized separately into squared and unsquared compensation constants.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_iir_20261006/REPORT_RU.md",
+            "docs/CAL_APP11_AC_NORMALIZATION_RU.md"
+          ]
+        }
+      }
+    },
+    "AcvSlowIirNumeratorCoef": {
+      "summary": "SLOW low-frequency calibration stores a fitted numerator; the normalizer derives coefficient constants and their squares from it.",
+      "usage_status": "established",
+      "limitations": [
+        "A physical transfer response and sampling cadence are outside this software evidence."
+      ],
+      "evidence": [
+        {
+          "path": "docs/CAL_APP11_AC_NORMALIZATION_RU.md",
+          "scope": "APP11 bounded SLOW coefficient path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "For ordinary finite inputs with nonzero divisors and a nonnegative sqrt radicand, let q10=read1_10/read2_10 and q40=read1_40/read2_40 from the retained helper records, p=(q10/q40)^2, a=2π*x10, b=2π*x40, and r=sqrt((p/(a*a)-1/(b*b))/(1-p)). With K=base[0x60], APP11 writes slow_num=med_num=K/r, slow_den=exp(-((8.94545*r-0.968)*K)/r), and med_den=exp(-((45.4573*r-5.0006)*K)/r). x is the call argument; points are retained only in the checked near-10 and near-40 windows. The helper payload meaning/units, K's units, actual call sequence, and physical fit interpretation remain OPEN; these are software expressions. This family stores the shared numerator K/r.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_iir_calculation_20261006/REPORT_RU.md"
+          ]
+        },
+        "application": {
+          "text": "The APP11 normalizer forms A=(16/147³)×N, then C_unsq=A×2^-28 and C_sq=A²×256 in the observed order. These are software scales used in compensation paths, not a full measured frequency response.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_APP11_AC_NORMALIZATION_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "APP11 sync enum 0 selects the SLOW numerator and passes it to the SLOW result element. Enum 1 selects the MED numerator; other observed enum branches do not make the same direct setter call.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_ac_aux_20261006/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The fit writes the named state and the sync path transfers it into runtime result processing. Complete refresh after external CAL import remains unresolved.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_iir_calculation_20261006/REPORT_RU.md",
+            "research/cal_app11_ac_aux_20261006/REPORT_RU.md"
+          ]
+        },
+        "related": {
+          "text": "AcvSlowIirDenomCoef controls the checked SLOW recurrence. The numerator supplies a separate pair of compensation scales and is not interchangeable with the recurrence denominator.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_iir_20261006/REPORT_RU.md",
+            "docs/CAL_APP11_AC_NORMALIZATION_RU.md"
+          ]
+        }
+      }
+    },
+    "AcvSlowNoiseGainSquared": {
+      "summary": "A SLOW or MED noise-gain state selected by mode; its runtime setter stores input plus one and its getter returns state minus one.",
+      "usage_status": "established",
+      "limitations": [
+        "The setter/getter transformation alone does not describe the complete AC output path."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_ac_aux_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded setter/getter path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "No complete procedure deriving the stored SLOW/MED noise-gain value was established in the checked sources. The runtime setter/getter transformation does not reveal the origin of the CAL scalar.",
+          "status": "OPEN",
+          "references": [
+            "research/cal_app11_ac_aux_20261006/REPORT_RU.md"
+          ]
+        },
+        "application": {
+          "text": "APP11 sync selects this value with SLOW or MED mode. The final setter stores input+1 and the getter returns state−1; the Compute path uses that state as a multiplier of the selected SqNoise term.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_ac_aux_20261006/REPORT_RU.md",
+            "docs/CAL_APP11_AC_NORMALIZATION_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "The SLOW and MED enum branches use the same named noise-gain state while choosing their corresponding IIR numerator. This is mode selection, not range-vector selection.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_ac_aux_20261006/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The checked sync path transfers the selected scalar into runtime state. Complete refresh after external CAL import remains unresolved.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_ac_aux_20261006/REPORT_RU.md",
+            "docs/CAL_APP11_STATUS_RU.md"
+          ]
+        },
+        "related": {
+          "text": "AcvSqNoise is a separate range-selected ACV second-moment term; AcvSlowDcGainSquared has a similarly named but unconnected state. Do not merge these semantics.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_ac_aux_20261006/REPORT_RU.md",
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+          ]
+        }
+      }
+    },
+    "AcvSqNoise": {
+      "summary": "Selected ACV range squared-noise term adjusts the second moment before the ordinary result is assembled.",
+      "usage_status": "established",
+      "limitations": [
+        "This is distinct from the mode-selected AcvSlowNoiseGainSquared state."
+      ],
+      "evidence": [
+        {
+          "path": "docs/CAL_AC_SCALAR_SELECTION_RU.md",
+          "scope": "APP11 bounded ordinary ACV result path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "The full APP11 producer for ACV range SqNoise is not traced. The ordinary result consumer and vector selection are established, but no calibration procedure or formula for stored entries is inferred.",
+          "status": "OPEN",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+          ]
+        },
+        "application": {
+          "text": "The selected ACV range term is passed to result processing and adjusts the second moment before the ordinary output stage. This is separate from AcvSlowNoiseGainSquared's mode-selected multiplier.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "The selected ACV range index addresses one of five SqNoise entries, paired positionally with the AcvGain vector.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "APP11 sync copies the selected CAL value to runtime result elements. A complete import-triggered refresh sequence is not established; persistence to NOR occurs on the separate CAL:STORE route.",
+          "status": "PARTIAL",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md",
+            "docs/CAL_APP11_STATUS_RU.md"
+          ]
+        },
+        "related": {
+          "text": "AcvGain scales the later amplitude, while AcvSqNoise adjusts the second moment. The SLOW/MED noise-gain coefficient is a different CAL family.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md",
+            "research/cal_app11_ac_aux_20261006/REPORT_RU.md"
+          ]
+        }
+      }
+    },
+    "AdcQuad": {
+      "summary": "The selected DCV quadratic coefficient contributes a square term when the quadratic mode byte is enabled.",
+      "usage_status": "established",
+      "limitations": [
+        "Other modes use the affine path; overload guards can bypass the final consumer."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_dcv_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded DCV quadratic branch"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43, bounded DCV 10 V calibration and reading paths.",
+        "calculation": {
+          "text": "GandalfDcvFunction::calGain calculates q in the 10 V negative-reference branch. Let v be the current negative reference value in volts, p the saved positive-point sample, and m the current negative-point sample. Both samples are divided by total packet weight and corrected by the selected terminal offset. Firmware calculates a=(p+m)/(2*v*v), b=(p-m)/(-2*v), then q=-a/b. It requires a nonzero saved p and checks -1e-6 <= 1/b <= 1e-6 before writing AdcQuad; upstream checks also apply. This formula uses the current v for both polarities; it does not independently fit unequal positive/negative reference magnitudes. The preceding positive-point branch saves p and calculates gain as (v/p)/(1+q_old*v).",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_ADC_QUAD_ORIGIN_RU.md"
+          ]
+        },
+        "application": {
+          "text": "After the DCV linear gain/offset stage, PPC computes V=V0+q*(V0*V0) when the quadratic stage is enabled. q has units 1/V. The correction is deltaV=q*V0*V0; the equivalent reading-dependent multiplier is 1+q*V0. For example, q=5e-8 1/V adds 5 microvolts at either V0=+10 V or V0=-10 V. The coefficient is used by the PPC reading calculation, not loaded as an ADC FPGA correction register.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_ADC_QUAD_ORIGIN_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "The checked DCV getter enables the quadratic stage for range index 2 (10 V). AdcQuad is one shared scalar, while the preceding offset is selected for Front or Rear terminals. This is a quadratic reading correction, not a per-code ADC INL table.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_ADC_QUAD_ORIGIN_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "calGain writes the registered DcvConstants scalar through setOnly. The getter and reading-configuration path forward it to the PPC calculation. CAL export serializes current registered values in memory; CAL:STORE separately writes that group to NOR. A successful scalar write alone does not establish a NOR commit. The complete post-adjustment refresh sequence is not established here.",
+          "status": "PARTIAL",
+          "references": [
+            "docs/CAL_ADC_QUAD_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "DcvGain10 and the selected DcvOff10 define V0. The calibration producer uses the selected offset when preparing p and m, and the positive gain adjustment depends on the previous AdcQuad value. Keep these values together when interpreting a CAL set.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_ADC_QUAD_ORIGIN_RU.md"
+          ]
+        }
+      }
+    },
+    "Adc_DcOffset": {
+      "summary": "DcOffset D sets the common level of the 64-entry alternating ADC offset LUT: D+P and D−P.",
+      "usage_status": "established",
+      "limitations": [
+        "The LUT affects feedback-code history; D is not directly added to the final reading."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_adc_20261006/REPORT_RU.md",
+          "scope": "APP11 ADC getter and register calculation"
+        },
+        {
+          "path": "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+          "scope": "Checked APP10/APP11 arithmetic and bounded ADC interpretation"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43 and the bounded ADC FPGA paths described in the evidence. Static use does not prove delivery or execution on a connected instrument.",
+        "calculation": {
+          "text": "fineDcCancel starts from D = trunc(the current DcOffset). In each sweep it tries D-2, D-1, D, D+1 and D+2, writes each candidate to the working CAL state, synchronizes hardware and acquires an internal calibration result m. For ordinary finite results it requires m to increase strictly with D, then selects the first candidate minimizing abs(m). If the center wins, the search succeeds and writes the selected D again; otherwise it repeats around the new center. Acquisition failure, a failed monotonicity check or exhaustion of 10 sweeps causes failure. This is an internal zero-centering search, not a direct voltage-offset conversion. The selected setup refers to the registered ADC CAL object. Updating D changes its working value; saving it to NOR is a separate operation. Automatic execution at startup and the complete outer failure/rollback policy are not established by this card.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md",
+            "AdcCalibrate::fineDcCancel @0x4019F4; candidate setter @0x401CC0; final setter @0x40264C",
+            "research/rc15_dc_offset_20261008/verification.json"
+          ]
+        },
+        "application": {
+          "text": "D = trunc(DcOffset), P = trunc(PiOffset), where trunc removes the fractional part toward zero. The 64-entry table is offset[2k] = D+P and offset[2k+1] = D-P for k=0..31. APP sends the low 16 bits of each entry to the offset-table writer, starting at selector 0x0200. The FPGA uses signed low-7-bit values, read with its feedback address sequence. They combine with the coarse feedback-table contribution and digital modulation before the feedback code is limited and retained for merge.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+            "AdcConstants::calculateRegValues @0x26446C; AdcCtrl::configAdc @0x250AE4"
+          ]
+        },
+        "selection": {
+          "text": "Separate DCV, ACV and ACI CAL states exist. The suffix identifies the ADC setup, not the active instrument configuration. Use the coefficients from the same setup together; a single CAL file does not identify which setup is currently active.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "AdcCalConfig::setConfig calls calculateRegValues to build working values; configAdc sends the calculated fields and tables. Writing a scalar, sending FPGA configuration and committing CAL to NOR are separate steps. CAL export serializes the current registered CAL state in memory. CAL:STORE uses the same CAL group to write a NOR record; an exported file alone does not prove that its values have already been committed to NOR. The complete activation sequence after external CAL import has not yet been verified.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "docs/CAL_RESTORE_FEASIBILITY_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "PiOffset sets the alternating part of the same 64-entry table. LutGain and Jitter contribute to the feedback calculation; FineMergeGain uses the resulting retained feedback history.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md"
+          ]
+        }
+      }
+    },
+    "Adc_FineMergeGain": {
+      "summary": "FineMergeGain is rounded after multiplication by 65536 and reduced to low 10 bits for the merge field that scales the fine-code difference.",
+      "usage_status": "established",
+      "limitations": [
+        "Quantization and low-bit selection matter; the stored double is not a direct volts-per-count reading gain."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_adc_20261006/REPORT_RU.md",
+          "scope": "APP11 ADC getter and register calculation"
+        },
+        {
+          "path": "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+          "scope": "Checked APP10/APP11 arithmetic and bounded ADC interpretation"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43 and the bounded ADC FPGA paths described in the evidence. Static use does not prove delivery or execution on a connected instrument.",
+        "calculation": {
+          "text": "fineMergeGainTune2 selects a scalar using a minimum-spread criterion on processed calibration samples. calibrateActiveConfig calls this routine separately from feedbackLutGainTune. This is scale matching, not a measured per-code INL table. The complete optimizer, acceptance limits and final persistence are not established by this card.",
+          "status": "PARTIAL",
+          "references": [
+            "docs/CAL_INL_SEARCH_RU.md",
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md"
+          ]
+        },
+        "application": {
+          "text": "For the supported finite nonnegative range 0 <= g < 1/64, G = low10(round_half_away(g*65536)); k = G/65536. APP calculates a register value and configAdc passes it to the FPGA. In the ordinary merge path, without overflow or truncation loss, delta_fine = previous_fine - current_fine and M = 65536*C_history + G*delta_fine. C_history is the retained feedback code from the matching pipeline history, not the current raw coarse sample. The exact RTL uses finite-width slices; this algebraic form does not replace those rules. G changes the fine contribution, not the complete reading scale.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+            "AdcConstants::calculateRegValues @0x26446C; AdcCtrl::configAdc @0x250AE4"
+          ]
+        },
+        "selection": {
+          "text": "Separate DCV, ACV and ACI CAL states exist. The suffix identifies the ADC setup, not the active instrument configuration. Use the coefficients from the same setup together; a single CAL file does not identify which setup is currently active.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "AdcCalConfig::setConfig calls calculateRegValues to build working values; configAdc sends the calculated fields and tables. Writing a scalar, sending FPGA configuration and committing CAL to NOR are separate steps. CAL export serializes the current registered CAL state in memory. CAL:STORE uses the same CAL group to write a NOR record; an exported file alone does not prove that its values have already been committed to NOR. The complete activation sequence after external CAL import has not yet been verified.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "docs/CAL_RESTORE_FEASIBILITY_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "DcOffset, PiOffset and LutGain affect the feedback code retained as C_history. FineSamplOffset and N_Decisions affect sampling/history alignment; changing the merge scale does not replace their timing configuration.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md"
+          ]
+        }
+      }
+    },
+    "Adc_FineSamplOffset": {
+      "summary": "FineSamplOffset is transformed with the decision count into the fine-trigger register; in the ordinary positive domain F is (trunc(offset)+N−2) remainder N.",
+      "usage_status": "established",
+      "limitations": [
+        "The stored offset is not itself the trigger register value; the expression has a bounded input domain."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_adc_20261006/REPORT_RU.md",
+          "scope": "APP11 ADC getter and register calculation"
+        },
+        {
+          "path": "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+          "scope": "Checked APP10/APP11 arithmetic and bounded ADC interpretation"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded ADC software calculation and control-register request paths. The saved scalar's producer and complete activation after CAL import are not established.",
+        "calculation": {
+          "text": "The procedure that produced the saved FineSamplOffset value is not established. This section describes only its register derivation: N = trunc(N_Decisions), F = trunc(FineSamplOffset), then the firmware stores the signed-remainder result rem(F + N - 2, N) as a halfword. This conversion is not a calibration equation. For N=0 the local path reaches signed division without a demonstrated guard.",
+          "status": "OPEN",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+            "docs/RC15_ADC_CONFIG_LIFECYCLE_RU.md"
+          ]
+        },
+        "application": {
+          "text": "getValFineTrigPoint returns the calculated halfword. configAdc keeps its low 7 bits, preserves the previous upper bits of the control word, and forms a software request for selector 0x22. The value is a position in the digital cycle; this path does not turn it into a physical aperture or elapsed time.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+            "research/cal_app11_adc_fine_offset_boundary_20261006/REPORT_RU.md",
+            "research/cal_app11_adc_decisions_domain_20261007/REPORT_RU.md",
+            "research/cal_app11_adc_slope_domain_20261007/REPORT_RU.md",
+            "AdcConstants::calculateRegValues @0x26446C",
+            "AdcCtrl::configAdc @0x250AE4"
+          ]
+        },
+        "selection": {
+          "text": "APP11 has separate ACI, ACV and DCV AdcConstants objects (groupId 2, 1 and 0). The suffix names the owning profile; it does not identify the active instrument setup. Interpret these fields with the other ADC values from that same profile.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "research/cal_app11_adc_states_io_crosswalk_20261007/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The ADC state is held in a registered profile object. CAL export serializes the current in-memory CAL group; CAL:STORE separately saves that group to a NOR record. setConfig recalculates derived values and configAdc forms software register requests. The complete sequence that activates externally imported CAL through register delivery has not been established.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "research/cal_app11_adc_states_io_crosswalk_20261007/REPORT_RU.md",
+            "docs/CAL_RESTORE_FEASIBILITY_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "N_Decisions supplies the cycle length N used by this calculation. Nf_Slope sets other window positions, so these timing fields describe one profile together.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+            "research/cal_app11_adc_20261006/REPORT_RU.md"
+          ]
+        }
+      }
+    },
+    "Adc_Jitter": {
+      "summary": "Jitter supplies the low-three-bit parameter of a separate deterministic digital J generator.",
+      "usage_status": "established",
+      "limitations": [
+        "The CAL scalar, control bits and generated signed J are distinct; J is already included in feedback code C, not an extra addition to the reading or a clock-jitter measure."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_adc_20261006/REPORT_RU.md",
+          "scope": "APP11 ADC getter and register calculation"
+        },
+        {
+          "path": "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+          "scope": "Bounded downstream meaning of ADC J"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded ADC software calculation and control-register request paths. The saved scalar's producer and complete activation after CAL import are not established.",
+        "calculation": {
+          "text": "The procedure that produced the saved Jitter value is not established. The bounded APP11 calculation derives the generator parameter from its low three bits; it does not derive a measured physical jitter value. The generator's sequence and its runtime state are separate from this saved scalar.",
+          "status": "OPEN",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+            "docs/RC15_ADC_CONFIG_LIFECYCLE_RU.md"
+          ]
+        },
+        "application": {
+          "text": "The Jitter getter feeds AdcConstants::calculateRegValues; configAdc sends the resulting ADC configuration through its software register path. In the checked feedback interpretation, the generated signed J is incorporated into the feedback code before retention and merge. Do not add J again to the final merged reading.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+            "research/cal_app11_adc_fine_offset_boundary_20261006/REPORT_RU.md",
+            "research/cal_app11_adc_decisions_domain_20261007/REPORT_RU.md",
+            "research/cal_app11_adc_slope_domain_20261007/REPORT_RU.md",
+            "AdcConstants::calculateRegValues @0x26446C",
+            "AdcCtrl::configAdc @0x250AE4"
+          ]
+        },
+        "selection": {
+          "text": "APP11 has separate ACI, ACV and DCV AdcConstants objects (groupId 2, 1 and 0). The suffix names the owning profile; it does not identify the active instrument setup. Interpret these fields with the other ADC values from that same profile.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "research/cal_app11_adc_states_io_crosswalk_20261007/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The ADC state is held in a registered profile object. CAL export serializes the current in-memory CAL group; CAL:STORE separately saves that group to a NOR record. setConfig recalculates derived values and configAdc forms software register requests. The complete sequence that activates externally imported CAL through register delivery has not been established.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "research/cal_app11_adc_states_io_crosswalk_20261007/REPORT_RU.md",
+            "docs/CAL_RESTORE_FEASIBILITY_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "DcOffset and PiOffset form the feedback offset table, while LutGain shapes the coarse feedback contribution. J enters that feedback path; FineMergeGain later combines the retained feedback history with the fine-sample difference.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+            "research/cal_app11_adc_20261006/REPORT_RU.md"
+          ]
+        }
+      }
+    },
+    "Adc_LutGain": {
+      "summary": "LutGain scales a 256-entry coarse-indexed LUT; each entry is rounded and clamped to the integer range −64 through 63.",
+      "usage_status": "established",
+      "limitations": [
+        "The table changes feedback-code selection; it does not independently multiply a completed reading."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_adc_20261006/REPORT_RU.md",
+          "scope": "APP11 ADC getter and register calculation"
+        },
+        {
+          "path": "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+          "scope": "Checked APP10/APP11 arithmetic and bounded ADC interpretation"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43 and the bounded ADC FPGA paths described in the evidence. Static use does not prove delivery or execution on a connected instrument.",
+        "calculation": {
+          "text": "feedbackLutGainTune reads the selected ADC setup, tries scalar candidates, synchronizes hardware and acquires samples. A separate branch uses checkPower. Successful selection writes the chosen double back to Adc_LutGain; error branches can prevent that write. The complete selection policy for both LutGainGoalEnum values is still unresolved. The 256 table entries are generated from this scalar, not independently calibrated INL corrections.",
+          "status": "PARTIAL",
+          "references": [
+            "docs/CAL_INL_SEARCH_RU.md",
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md"
+          ]
+        },
+        "application": {
+          "text": "For table index i=0..255, gain[i] = clamp(round_half_away((i-127.5)*g), -64, 63). APP sends 256 low-16-bit words through the gain-table writer starting at selector 0x0100. The captured 8-bit coarse code addresses entry 255-coarse_code. The selected table value contributes to feedback; rounding and clipping make this a discrete transfer rather than an output multiplier.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+            "AdcConstants::calculateRegValues @0x26446C; AdcCtrl::configAdc @0x250AE4"
+          ]
+        },
+        "selection": {
+          "text": "Separate DCV, ACV and ACI CAL states exist. The suffix identifies the ADC setup, not the active instrument configuration. Use the coefficients from the same setup together; a single CAL file does not identify which setup is currently active.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "AdcCalConfig::setConfig calls calculateRegValues to build working values; configAdc sends the calculated fields and tables. Writing a scalar, sending FPGA configuration and committing CAL to NOR are separate steps. CAL export serializes the current registered CAL state in memory. CAL:STORE uses the same CAL group to write a NOR record; an exported file alone does not prove that its values have already been committed to NOR. The complete activation sequence after external CAL import has not yet been verified.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "docs/CAL_RESTORE_FEASIBILITY_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "DcOffset and PiOffset provide the other feedback-table component. Jitter contributes digital modulation. FineMergeGain combines the retained feedback history with the fine-sample difference.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md"
+          ]
+        }
+      }
+    },
+    "Adc_N_Decisions": {
+      "summary": "N_Decisions sets the ADC decision count N and a software cycle field of N−1.",
+      "usage_status": "established",
+      "limitations": [
+        "It also enters trigger positions and should be read with the other timing fields."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_adc_20261006/REPORT_RU.md",
+          "scope": "APP11 ADC getter and register calculation"
+        },
+        {
+          "path": "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+          "scope": "Checked APP10/APP11 ADC timing interpretation"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded ADC software calculation and control-register request paths. The saved scalar's producer and complete activation after CAL import are not established.",
+        "calculation": {
+          "text": "The procedure that produced the saved N_Decisions value is not established. The firmware conversion is N = _d_dtoi(N_Decisions), with N-1 stored as a halfword field; the software cycle member also receives N-1. These are register and configuration derivations, not a gain or calibration-production formula. The local conversion/setter path shown here does not validate N before later use.",
+          "status": "OPEN",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+            "docs/RC15_ADC_CONFIG_LIFECYCLE_RU.md"
+          ]
+        },
+        "application": {
+          "text": "AdcCalConfig::setConfig calls calculateRegValues. configAdc sends the calculated cycle fields through the ADC control-register path. N is the number of FPGA clocks in the configured decision cycle. A nominal time projection needs a clock assumption and does not establish a measured aperture or instrument reading cadence.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+            "research/cal_app11_adc_fine_offset_boundary_20261006/REPORT_RU.md",
+            "research/cal_app11_adc_decisions_domain_20261007/REPORT_RU.md",
+            "research/cal_app11_adc_slope_domain_20261007/REPORT_RU.md",
+            "AdcConstants::calculateRegValues @0x26446C",
+            "AdcCtrl::configAdc @0x250AE4"
+          ]
+        },
+        "selection": {
+          "text": "APP11 has separate ACI, ACV and DCV AdcConstants objects (groupId 2, 1 and 0). The suffix names the owning profile; it does not identify the active instrument setup. Interpret these fields with the other ADC values from that same profile.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "research/cal_app11_adc_states_io_crosswalk_20261007/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The ADC state is held in a registered profile object. CAL export serializes the current in-memory CAL group; CAL:STORE separately saves that group to a NOR record. setConfig recalculates derived values and configAdc forms software register requests. The complete sequence that activates externally imported CAL through register delivery has not been established.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "research/cal_app11_adc_states_io_crosswalk_20261007/REPORT_RU.md",
+            "docs/CAL_RESTORE_FEASIBILITY_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "FineSamplOffset is reduced modulo N for selector 0x22. Nf_Slope uses N to derive the coarse request and window boundaries. Keep all three from the same ADC profile.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+            "research/cal_app11_adc_20261006/REPORT_RU.md"
+          ]
+        }
+      }
+    },
+    "Adc_Nf_Slope": {
+      "summary": "Nf_Slope forms decision-window half-width H by truncating slope/2; H enters the calculated coarse, start and end positions.",
+      "usage_status": "established",
+      "limitations": [
+        "Its meaning depends on the decision count and fine-aperture position; it is not a result multiplier."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_adc_20261006/REPORT_RU.md",
+          "scope": "APP11 ADC getter and register calculation"
+        },
+        {
+          "path": "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+          "scope": "Checked APP10/APP11 ADC timing interpretation"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded ADC software calculation and control-register request paths. The saved scalar's producer and complete activation after CAL import are not established.",
+        "calculation": {
+          "text": "The procedure that produced the saved Nf_Slope value is not established. For the bounded small-integer domain, S = trunc(Nf_Slope) and H = trunc_zero(S/2). The firmware derives signed-remainder positions from N and H: start=rem(N-H-1,N), end=rem(N+H-1,N), and C=min(sign_extend16(low16(wrap32(H-17))),0), K=rem(N+C-4,N). The implemented path also applies signed 32-bit arithmetic and halfword storage; this register derivation is not a calibration-production equation.",
+          "status": "OPEN",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+            "docs/RC15_ADC_CONFIG_LIFECYCLE_RU.md"
+          ]
+        },
+        "application": {
+          "text": "calculateRegValues stores the derived halfwords. configAdc takes their low 7 bits and forms requests for selectors 0x23, 0x24, and 0x21. The bounded report checks software request construction; it does not establish FPGA acceptance or physical window timing.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+            "research/cal_app11_adc_fine_offset_boundary_20261006/REPORT_RU.md",
+            "research/cal_app11_adc_decisions_domain_20261007/REPORT_RU.md",
+            "research/cal_app11_adc_slope_domain_20261007/REPORT_RU.md",
+            "AdcConstants::calculateRegValues @0x26446C",
+            "AdcCtrl::configAdc @0x250AE4"
+          ]
+        },
+        "selection": {
+          "text": "APP11 has separate ACI, ACV and DCV AdcConstants objects (groupId 2, 1 and 0). The suffix names the owning profile; it does not identify the active instrument setup. Interpret these fields with the other ADC values from that same profile.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "research/cal_app11_adc_states_io_crosswalk_20261007/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The ADC state is held in a registered profile object. CAL export serializes the current in-memory CAL group; CAL:STORE separately saves that group to a NOR record. setConfig recalculates derived values and configAdc forms software register requests. The complete sequence that activates externally imported CAL through register delivery has not been established.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "research/cal_app11_adc_states_io_crosswalk_20261007/REPORT_RU.md",
+            "docs/CAL_RESTORE_FEASIBILITY_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "N_Decisions supplies the cycle length N. FineSamplOffset supplies the fine position. The three fields jointly position requests within a profile's digital cycle.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+            "research/cal_app11_adc_20261006/REPORT_RU.md"
+          ]
+        }
+      }
+    },
+    "Adc_PiOffset": {
+      "summary": "PiOffset P sets the alternating component of the ADC offset LUT: D+P and D−P.",
+      "usage_status": "established",
+      "limitations": [
+        "It is not a direct reading offset or an established cancellation of the analog geometry term."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_adc_20261006/REPORT_RU.md",
+          "scope": "APP11 ADC getter and register calculation"
+        },
+        {
+          "path": "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+          "scope": "Bounded downstream ADC offset interpretation"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43 and the bounded ADC FPGA paths described in the evidence. Static use does not prove delivery or execution on a connected instrument.",
+        "calculation": {
+          "text": "The existing feedbackPiCancel analysis identifies an initial estimate P = -round_half_away(sample/2), refinement from residual measurements, and comparison of P, P+1 and P-1 by absolute residual. The selected integer is assigned to the scalar state. This describes the bounded adjustment algorithm; it does not establish automatic execution at startup or a particular physical error cancelled by P.",
+          "status": "PARTIAL",
+          "references": [
+            "docs/CAL_INL_SEARCH_RU.md",
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md"
+          ]
+        },
+        "application": {
+          "text": "D = trunc(DcOffset), P = trunc(PiOffset), where trunc removes the fractional part toward zero. The 64-entry table is offset[2k] = D+P and offset[2k+1] = D-P for k=0..31. APP sends the low 16 bits of each entry to the offset-table writer, starting at selector 0x0200. The FPGA uses signed low-7-bit values, read with its feedback address sequence. They combine with the coarse feedback-table contribution and digital modulation before the feedback code is limited and retained for merge.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
+            "AdcConstants::calculateRegValues @0x26446C; AdcCtrl::configAdc @0x250AE4"
+          ]
+        },
+        "selection": {
+          "text": "Separate DCV, ACV and ACI CAL states exist. The suffix identifies the ADC setup, not the active instrument configuration. Use the coefficients from the same setup together; a single CAL file does not identify which setup is currently active.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "AdcCalConfig::setConfig calls calculateRegValues to build working values; configAdc sends the calculated fields and tables. Writing a scalar, sending FPGA configuration and committing CAL to NOR are separate steps. CAL export serializes the current registered CAL state in memory. CAL:STORE uses the same CAL group to write a NOR record; an exported file alone does not prove that its values have already been committed to NOR. The complete activation sequence after external CAL import has not yet been verified.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_adc_20261006/REPORT_RU.md",
+            "docs/CAL_RESTORE_FEASIBILITY_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "DcOffset sets the common part of the same table. Increasing P by one raises even entries and lowers odd entries before finite-width encoding. The effect on the final reading also depends on feedback history and FineMergeGain.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_ADC_PHYSICAL_MEANING_RU.md"
+          ]
+        }
+      }
+    },
+    "CapOffset": {
+      "summary": "Terminal-selected capacitance offset, stored in farads, is subtracted in the software capacitance result path.",
+      "usage_status": "established",
+      "limitations": [
+        "Software units do not establish calibration accuracy or identify a particular external capacitance."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_cap_dependencies_20261006/RESULT_RU.md",
+          "scope": "APP11 bounded CAP getter and result calculation"
+        },
+        {
+          "path": "research/cal_cap_units_20261008/si_evidence.json",
+          "scope": "APP11 CAP range scale, unit labels and unchanged result transfer"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "The checked source establishes terminal-specific state and use, but not the calibration procedure that derives a new CapOffset from a reference capacitor and accepted reading. No producer formula is inferred from the consumer subtraction.",
+          "status": "OPEN",
+          "references": [
+            "research/cal_app11_cap_dependencies_20261006/RESULT_RU.md"
+          ]
+        },
+        "application": {
+          "text": "The selected CapOffsetFront or CapOffsetRear is copied unchanged into the CAP processor coefficient structure and later subtracted from the computed capacitance result. Packet-weight scaling and +0.5 rounding belong to a different input: the terminal-selected DcvOff10 value. APP11 unit evidence identifies CapOffset in farads.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_cap_dependencies_20261006/RESULT_RU.md",
+            "research/cal_cap_units_20261008/si_evidence.json"
+          ]
+        },
+        "selection": {
+          "text": "Front/rear terminals select CapOffsetFront or CapOffsetRear. The software getter also combines selected DCV gain/offset, frequency gain, and range-indexed coefficient vectors; those dependencies are not all identified as CAP-family CAL fields.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_cap_dependencies_20261006/RESULT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The selected state is copied into the CAP processor configuration during software sync. External CAL import refresh and automatic recalibration are not established; CAL:STORE is separate persistence.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_cap_dependencies_20261006/RESULT_RU.md",
+            "docs/CAL_APP11_STATUS_RU.md"
+          ]
+        },
+        "related": {
+          "text": "CapOffset is an additive terminal-specific correction applied after the capacitance calculation. DcvOff10 and DcvGain10 are additional inputs to the CAP coefficient structure and remain separate states.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_cap_dependencies_20261006/RESULT_RU.md"
+          ]
+        }
+      }
+    },
+    "CurrentSrcDelay": {
+      "summary": "For the checked compensated low-range resistance path, software selects the unsigned maximum of this state and PacketCounts.McDelay as a count of short DC MeanPacket records before NPLC accumulation. APP11 minimum-sample-time arithmetic uses an initialized scale of 19.952941176 microseconds per count.",
+      "usage_status": "established",
+      "limitations": [
+        "The time estimate describes this CAL count only; a later trigger-delay maximum can extend the wait. One wait is not the complete autozero cycle. This software scale is not a measured hardware clock."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_heater_delay_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded software timing-state path"
+        },
+        {
+          "path": "research/cal_mc_mz_time_scale_20261008/evidence.json",
+          "scope": "APP11 RES minimum-sample-time arithmetic and initialized seconds/count scale"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "The APP11 constructor supplies an initial default of 75; a complete user calibration producer for this stored delay is not established. The value's runtime role is proven independently and does not turn the constructor default into a measured calibration result.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_current_src_delay_default_init_20261007/REPORT_RU.md",
+            "research/cal_current_delay_units_20261008/evidence.json"
+          ]
+        },
+        "application": {
+          "text": "In the checked syncHardwareSwMode branch (Function=RES, Range<=2, OComp=true), PacketCounts receives max_unsigned(CurrentSrcDelay, table-selected McDelay). The inspected software current-source path then takes another unsigned maximum with trigger delay and passes the count to DCStateWaitForSettle. Its buffer consumer discards that many 8-byte MeanPacketType elements; this local receiver does not convert the count to seconds.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_current_delay_units_20261008/evidence.json"
+          ]
+        },
+        "selection": {
+          "text": "This count behavior is conditional on the checked RES function, Range<=2, and offset-compensation branch. It describes discarded MeanPacket records, not a final reading or Decision Cycle count.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_current_delay_units_20261008/evidence.json"
+          ]
+        },
+        "activation": {
+          "text": "The state supplies one input to the bounded software count calculation. A complete update path after external CAL import is not established.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_current_delay_units_20261008/evidence.json",
+            "docs/CAL_APP11_STATUS_RU.md"
+          ]
+        },
+        "related": {
+          "text": "Runtime McDelay and trigger delay are separate participants in the maximum. The saved McDelay/MzDelay CAL fields are not proven sources for the working MC/MZ tables.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_current_delay_units_20261008/evidence.json",
+            "docs/CAL_USER_UNITS_RU.md"
+          ]
+        }
+      }
+    },
+    "DciGain": {
+      "summary": "One of six DCI range gains is selected and scaled by total packet weight in the common setter.",
+      "usage_status": "established",
+      "limitations": [
+        "Line-frequency and row-index selection follow the checked software path; an index accepted by its guard is not necessarily a valid NPLC enum."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded DCI range and setter path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; ordinary software result path. This describes use, not the accuracy of this saved value.",
+        "calculation": {
+          "text": "calGain forms G_new=G_old*reference/sample and writes the selected DciGain state after acceptance checks. G_old is the current stored gain; sample is the captured debug-reading scalar. This function does not explicitly divide sample by packet weight or subtract a DciOff value again. The exact upstream processing stage of that sample is not yet resolved by this card. Both the reference input and the new gain are checked against range-specific bounds. The formula adjusts the existing gain; it differs from the direct DCV reference/normalized-sample calculation.",
+          "status": "PARTIAL",
+          "references": [
+            "research/rc15_cal_lifecycle_20261008/dci_gain_peer.md",
+            "docs/CAL_DC_GAIN_ORIGIN_RU.md"
+          ]
+        },
+        "application": {
+          "text": "Let G be the selected stored gain, O the selected stored offset, T the total packet weight, and S the accumulated signed integer input. Firmware computes g = G / T and o = trunc(O*T + 0.5) for O*T > 0, otherwise o = trunc(O*T - 0.5). The linear stage is y0 = double_signed(wrap64(S - o)) * g. trunc means conversion toward zero within the supported numeric domain. These coefficients are applied by PPC software in this path; the endpoint is a reading calculation, not a directly programmed FPGA gain/offset register.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "research/cal_app11_dcv_20261006/REPORT_RU.md",
+            "DCPacketProcessor::setCalCoeffs @0x42851C; ComputeDCFinalReading::operator() @0x60DA98"
+          ]
+        },
+        "selection": {
+          "text": "DC current selects the range-specific gain and the Front or Rear offset. Gain is shared between Front and Rear.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "GandalfDciFunction::getCalCoeffs @0x302B24"
+          ]
+        },
+        "activation": {
+          "text": "The function's syncSoftware path obtains the selected coefficients and passes them to setCalCoeffs. The exact event and timing that activate values after a CAL import are not yet verified. CAL export serializes the current registered values in memory; CAL:STORE separately saves that group to NOR. A successful scalar update does not itself establish a NOR commit.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "docs/CAL_RESTORE_FEASIBILITY_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "The matching DciOff (Front or Rear) for the same range participates in the same linear-stage formula.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md"
+          ]
+        }
+      }
+    },
+    "DciOff": {
+      "summary": "DCI range and terminal selection choose a front or rear offset, which the common setter scales by total packet weight with sign-dependent rounding.",
+      "usage_status": "established",
+      "limitations": [
+        "The interpretation applies to the checked range and terminal branches."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded DCI offset path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; ordinary software result path. This describes use, not the accuracy of this saved value.",
+        "calculation": {
+          "text": "calOffset acquires a zero-condition debug sample for each range and computes O_new=sample/totalWeight. After the range-specific acceptance checks, it writes this absolute value to the selected Front or Rear offset state. It does not add the result to the old offset and does not multiply it by gain before storage. The ordinary reading path later subtracts round(O_new*T) from the accumulated input. The bool and double arguments configure trigger delay; they are not an entered reference voltage. The selected DCI vectors contain six range states.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_DC_GAIN_ORIGIN_RU.md",
+            "research/rc15_cal_lifecycle_20261008/dc_offsets_peer.md"
+          ]
+        },
+        "application": {
+          "text": "Let G be the selected stored gain, O the selected stored offset, T the total packet weight, and S the accumulated signed integer input. Firmware computes g = G / T and o = trunc(O*T + 0.5) for O*T > 0, otherwise o = trunc(O*T - 0.5). The linear stage is y0 = double_signed(wrap64(S - o)) * g. trunc means conversion toward zero within the supported numeric domain. These coefficients are applied by PPC software in this path; the endpoint is a reading calculation, not a directly programmed FPGA gain/offset register.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "research/cal_app11_dcv_20261006/REPORT_RU.md",
+            "DCPacketProcessor::setCalCoeffs @0x42851C; ComputeDCFinalReading::operator() @0x60DA98"
+          ]
+        },
+        "selection": {
+          "text": "DC current selects the range-specific gain and the Front or Rear offset. Gain is shared between Front and Rear.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "GandalfDciFunction::getCalCoeffs @0x302B24"
+          ]
+        },
+        "activation": {
+          "text": "The function's syncSoftware path obtains the selected coefficients and passes them to setCalCoeffs. The exact event and timing that activate values after a CAL import are not yet verified. CAL export serializes the current registered values in memory; CAL:STORE separately saves that group to NOR. A successful scalar update does not itself establish a NOR commit.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "docs/CAL_RESTORE_FEASIBILITY_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "The matching DciGain for the same range participates in the same linear-stage formula.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md"
+          ]
+        }
+      }
+    },
+    "DcvGain": {
+      "summary": "One of five DCV range gains is selected and scaled by total packet weight in the common setter.",
+      "usage_status": "established",
+      "limitations": [
+        "A row index accepted by the software guard is not necessarily a valid NPLC enum."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_dcv_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded DCV range and setter path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; ordinary software result path. This describes use, not the accuracy of this saved value.",
+        "calculation": {
+          "text": "calGain takes the reference voltage v and forms m = sample/totalWeight - selected_terminal_offset. The initial gain candidate is g=v/m. On 100 mV, the positive point caches g_plus; the negative point writes (g_plus+g_minus)/2. On 1 V, 100 V and 1000 V, the accepted candidate is written directly. On 10 V, the positive point writes (v/m)/(1+AdcQuad_old*v), while the negative point updates AdcQuad instead of gain. Input, acquisition and gain bounds checks apply. The named DcvGain state is written through setOnly. This is an absolute internal scale; the displayed ratio to a firmware default is a separate presentation.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_DC_GAIN_ORIGIN_RU.md",
+            "docs/CAL_ADC_QUAD_ORIGIN_RU.md"
+          ]
+        },
+        "application": {
+          "text": "Let G be the selected stored gain, O the selected stored offset, T the total packet weight, and S the accumulated signed integer input. Firmware computes g = G / T and o = trunc(O*T + 0.5) for O*T > 0, otherwise o = trunc(O*T - 0.5). The linear stage is y0 = double_signed(wrap64(S - o)) * g. trunc means conversion toward zero within the supported numeric domain. These coefficients are applied by PPC software in this path; the endpoint is a reading calculation, not a directly programmed FPGA gain/offset register. On the 10 V range the enabled quadratic stage follows: y = y0 + AdcQuad*y0*y0.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dcv_20261006/REPORT_RU.md",
+            "research/cal_app11_dcv_20261006/REPORT_RU.md",
+            "DCPacketProcessor::setCalCoeffs @0x42851C; ComputeDCFinalReading::operator() @0x60DA98"
+          ]
+        },
+        "selection": {
+          "text": "DC voltage selects the range-specific gain and the Front or Rear offset. Gain is shared between Front and Rear.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dcv_20261006/REPORT_RU.md",
+            "GandalfDcvFunction::getCalCoeffs @0x314FE8"
+          ]
+        },
+        "activation": {
+          "text": "The function's syncSoftware path obtains the selected coefficients and passes them to setCalCoeffs. The exact event and timing that activate values after a CAL import are not yet verified. CAL export serializes the current registered values in memory; CAL:STORE separately saves that group to NOR. A successful scalar update does not itself establish a NOR commit.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_dcv_20261006/REPORT_RU.md",
+            "docs/CAL_RESTORE_FEASIBILITY_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "The matching DcvOff (Front or Rear) for the same range participates in the same linear-stage formula. AdcQuad additionally affects the 10 V result.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dcv_20261006/REPORT_RU.md"
+          ]
+        }
+      }
+    },
+    "DcvOff": {
+      "summary": "DCV range and terminal selection choose a front or rear offset, which the common setter scales by total packet weight with sign-dependent rounding.",
+      "usage_status": "established",
+      "limitations": [
+        "The CAP dependency applies only to two specified 10 V offset members; it is not a property of every row."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_dcv_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded DCV offset path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; ordinary software result path. This describes use, not the accuracy of this saved value.",
+        "calculation": {
+          "text": "calOffset acquires a zero-condition debug sample for each range and computes O_new=sample/totalWeight. After the range-specific acceptance checks, it writes this absolute value to the selected Front or Rear offset state. It does not add the result to the old offset and does not multiply it by gain before storage. The ordinary reading path later subtracts round(O_new*T) from the accumulated input. The bool and double arguments configure trigger delay; they are not an entered reference voltage. The checked DCV loop covers the five range states.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_DC_GAIN_ORIGIN_RU.md",
+            "research/rc15_cal_lifecycle_20261008/dc_offsets_peer.md"
+          ]
+        },
+        "application": {
+          "text": "Let G be the selected stored gain, O the selected stored offset, T the total packet weight, and S the accumulated signed integer input. Firmware computes g = G / T and o = trunc(O*T + 0.5) for O*T > 0, otherwise o = trunc(O*T - 0.5). The linear stage is y0 = double_signed(wrap64(S - o)) * g. trunc means conversion toward zero within the supported numeric domain. These coefficients are applied by PPC software in this path; the endpoint is a reading calculation, not a directly programmed FPGA gain/offset register. On the 10 V range the enabled quadratic stage follows: y = y0 + AdcQuad*y0*y0.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dcv_20261006/REPORT_RU.md",
+            "research/cal_app11_dcv_20261006/REPORT_RU.md",
+            "DCPacketProcessor::setCalCoeffs @0x42851C; ComputeDCFinalReading::operator() @0x60DA98"
+          ]
+        },
+        "selection": {
+          "text": "DC voltage selects the range-specific gain and the Front or Rear offset. Gain is shared between Front and Rear.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dcv_20261006/REPORT_RU.md",
+            "GandalfDcvFunction::getCalCoeffs @0x314FE8"
+          ]
+        },
+        "activation": {
+          "text": "The function's syncSoftware path obtains the selected coefficients and passes them to setCalCoeffs. The exact event and timing that activate values after a CAL import are not yet verified. CAL export serializes the current registered values in memory; CAL:STORE separately saves that group to NOR. A successful scalar update does not itself establish a NOR commit.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_dcv_20261006/REPORT_RU.md",
+            "docs/CAL_RESTORE_FEASIBILITY_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "The matching DcvGain for the same range participates in the same linear-stage formula. AdcQuad additionally affects the 10 V result.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dcv_20261006/REPORT_RU.md"
+          ]
+        }
+      }
+    },
+    "Divider10M": {
+      "summary": "A conditional correction for ordinary high-range resistance results, applied below its checked guard.",
+      "usage_status": "established",
+      "limitations": [
+        "Above the guard the path selects overload; a global override changes the additional upper limit."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded ordinary RES range 6/7 path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded resistance calibration and high-range correction paths.",
+        "calculation": {
+          "text": "In the range-index-5 (10 Mohm) branch, calGain first updates the gain banks, then installs a dedicated divider calibration front-end configuration and acquires another sample. If acquisition succeeds and the sample lies between 8 Mohm and 12 Mohm inclusive, the sample is written directly as Divider10M. There is no further arithmetic between this sample and the scalar setter. These are firmware acceptance bounds, not accuracy limits. The complete upstream sample-processing and physical switch network are outside this bounded trace.",
+          "status": "PARTIAL",
+          "references": [
+            "docs/CAL_DIVIDER_ORIGIN_RU.md"
+          ]
+        },
+        "application": {
+          "text": "Let D be Divider10M and x the nonnegative result after the resistance linear and absolute-value stages. The enabled high-range stage calculates R=x*D/(D-x). D and x are in ohms. The checked consumer requires x < 0.9999*D; overload and other reading guards still apply. D is an effective divider resistance, not a constant multiplier on the displayed resistance. During high-range gain calibration the inverse expression x=R*D/(D+R) also appears.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_DIVIDER_ORIGIN_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "The ordinary 100 Mohm and 1 Gohm paths enable the divider correction (range indices 6 and 7). One Divider10M scalar is shared; there are no separate Front/Rear or 2-wire/4-wire copies of this field. This does not establish which range/mode combinations are available on a connected instrument.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_DIVIDER_ORIGIN_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The accepted sample replaces the registered Divider10M value through setOnly. The resistance coefficient path reads that value for the PPC calculation. CAL export serializes the current CAL group in memory; CAL:STORE separately saves it to NOR. The scalar write alone does not prove a NOR commit or immediate refresh of every working consumer.",
+          "status": "PARTIAL",
+          "references": [
+            "docs/CAL_DIVIDER_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "The selected ResGain/Res4Gain and Front/Rear offset determine x before divider correction. The 10 Mohm calibration branch also copies its ordinary gains into the 100 Mohm and 1 Gohm gain fields before the separate divider acquisition. If the later divider check fails, that failure alone does not establish rollback of earlier gain updates.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_DIVIDER_ORIGIN_RU.md"
+          ]
+        }
+      }
+    },
+    "FreqGain": {
+      "summary": "Frequency counter scale used in software frequency and period calculations, and in the CAP denominator path.",
+      "usage_status": "established",
+      "limitations": [
+        "Counter rollover and physical timing behavior are outside the checked chain."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_freq_pwm_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded frequency, period and CAP calculations"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded frequency gain producer and software counter calculations.",
+        "calculation": {
+          "text": "calGain computes G_new=G_old*reference/sample, using the current FreqGain and a captured debug-reading scalar. The input argument must lie between 990 and 101000, and the candidate gain between 0.9 and 1.1. These are firmware acceptance bounds, not measurement accuracy limits or a recommended calibration procedure. The passing branch writes the registered FreqGain scalar through setOnly. The full upstream sample-processing and command-dispatch chain is not established by this card.",
+          "status": "PARTIAL",
+          "references": [
+            "research/rc15_cal_lifecycle_20261008/freq_gain_peer.md"
+          ]
+        },
+        "application": {
+          "text": "Firmware sets Fbase=106250000*G Hz. In the ordinary counter branch, dt=(B-A)/Fbase, frequency=N/dt and period=dt/N, where A, B and N are the supplied counter values. For fixed counter values, increasing G increases the reported frequency and decreases the period. Zero-duration and invalid-record handling follow separate branches.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_FOLLOWUP_DCI_RES_PWM_FREQ_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "One FreqGain scalar is shared by the frequency and period calculations; it is not a separate coefficient for every range or terminal.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_FOLLOWUP_DCI_RES_PWM_FREQ_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The scalar setter changes registered CAL memory. setFrequencyGain transfers the scaled value to FrequencyCompute. Export reads current CAL memory; CAL:STORE separately saves the group to NOR. The complete refresh sequence after external CAL import remains unresolved.",
+          "status": "PARTIAL",
+          "references": [
+            "docs/CAL_FOLLOWUP_DCI_RES_PWM_FREQ_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "The capacitance calculation also consumes FreqGain in its denominator path. Interpret it as part of the same CAL set, rather than as an isolated change affecting frequency only.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_FOLLOWUP_DCI_RES_PWM_FREQ_RU.md",
+            "docs/CAL_USER_UNITS_RU.md"
+          ]
+        }
+      }
+    },
+    "HeaterGain": {
+      "summary": "Heater drive calculation divides its positive-target square-root term by HeaterGain before code scaling.",
+      "usage_status": "established",
+      "limitations": [
+        "Nonpositive target power and voltage-compensation guards use separate branches; hardware output is unverified."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_heater_delay_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded heater-code calculation"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "The checked APP11 path establishes how the stored HeaterGain affects drive code, but does not trace its calibration producer or a procedure that derives the state from measurements.",
+          "status": "OPEN",
+          "references": [
+            "research/cal_heater_delay_20261006/REPORT_RU.md"
+          ]
+        },
+        "application": {
+          "text": "For the checked positive-target branch, the firmware forms sqrt(HeaterRes×targetPower), divides by HeaterGain, then applies code scaling. HeaterGain therefore divides; it is not a multiplier. Voltage compensation has its own guarded branch, and hardware output was not tested.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_heater_delay_20261006/REPORT_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "The checked heater calculation reads the shared HeaterGain state rather than selecting a range-indexed vector. The voltage-compensation branch depends on its own voltage condition.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_heater_delay_20261006/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The value is read by the software drive calculation. Import refresh, actuator write acceptance, and the physical heater response are outside the checked static evidence.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_heater_delay_20261006/REPORT_RU.md",
+            "docs/CAL_APP11_STATUS_RU.md"
+          ]
+        },
+        "related": {
+          "text": "HeaterRes multiplies target power under the square root; HeaterGain divides the resulting term. Both participate in one drive calculation with separate roles.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_heater_delay_20261006/REPORT_RU.md"
+          ]
+        }
+      }
+    },
+    "HeaterRes": {
+      "summary": "Heater drive calculation multiplies HeaterRes by positive target power inside the square-root term.",
+      "usage_status": "established",
+      "limitations": [
+        "Nonpositive target power and voltage-compensation guards use separate branches; hardware output is unverified."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_heater_delay_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded heater-code calculation"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "The calibration process that derives HeaterRes from a reference load or measured heater behavior is not traced in the checked APP11 evidence.",
+          "status": "OPEN",
+          "references": [
+            "research/cal_heater_delay_20261006/REPORT_RU.md"
+          ]
+        },
+        "application": {
+          "text": "For positive target power, HeaterRes multiplies target power inside sqrt(HeaterRes×targetPower). The resulting term is divided by HeaterGain before code scaling. Nonpositive target and voltage-compensation guards use separate branches.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_heater_delay_20261006/REPORT_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "The checked heater calculation uses one shared HeaterRes state; no range or terminal vector selection is established for this path.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_heater_delay_20261006/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The software drive calculation reads the state, but external import refresh, output acceptance, and physical heating have not been validated here.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_heater_delay_20261006/REPORT_RU.md",
+            "docs/CAL_APP11_STATUS_RU.md"
+          ]
+        },
+        "related": {
+          "text": "HeaterGain divides the square-root term. A change to either state can alter the computed drive code, but neither state alone defines the guarded voltage-compensation path.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_heater_delay_20261006/REPORT_RU.md"
+          ]
+        }
+      }
+    },
+    "McDelay": {
+      "summary": "A CAL-state change raises an APP11 update event that can reach register writes.",
+      "usage_status": "open",
+      "limitations": [
+        "Those writes are not proof of numeric use: PacketCounts.McDelay comes from mcDelayTable, with no established link from this CAL value."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_heater_delay_20261006/REPORT_RU.md",
+          "scope": "APP11 event-to-write path; numeric CAL-to-table link open"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "The numeric producer for the saved McDelay CAL state is not established. APP11 uses working MC delay table values in the checked timing path, but no numeric link from this saved field to that table was found.",
+          "status": "OPEN",
+          "references": [
+            "docs/CAL_USER_UNITS_RU.md",
+            "research/cal_mc_mz_context_20261008/REPORT_RU.md"
+          ]
+        },
+        "application": {
+          "text": "A CAL update event can reach register writes, but the numeric working PacketCounts.McDelay comes from mcDelayTable. The event-to-write route does not establish that this saved CAL scalar supplies the table entry.",
+          "status": "OPEN",
+          "references": [
+            "docs/CAL_USER_UNITS_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "Working MC table selection depends on function and 2W/4W in the checked RES path. A selector for the saved McDelay CAL field into those entries has not been established.",
+          "status": "OPEN",
+          "references": [
+            "research/cal_mc_mz_packet_time_20261008/REPORT_RU.md",
+            "docs/CAL_USER_UNITS_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "A state update can raise an event that reaches a software write path. The numeric value written from working tables is not tied to this CAL state, so this does not establish activation of the saved value.",
+          "status": "PARTIAL",
+          "references": [
+            "docs/CAL_USER_UNITS_RU.md"
+          ]
+        },
+        "related": {
+          "text": "CurrentSrcDelay is independently proven to participate in a maximum with runtime McDelay. The saved McDelay CAL state remains separate from that runtime table value until a numeric bridge is found.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_current_delay_units_20261008/evidence.json",
+            "docs/CAL_USER_UNITS_RU.md"
+          ]
+        }
+      }
+    },
+    "MzDelay": {
+      "summary": "A CAL-state change raises an APP11 update event that can reach register writes.",
+      "usage_status": "open",
+      "limitations": [
+        "Those writes are not proof of numeric use: PacketCounts.MzDelay comes from mzDelayTable, with no established link from this CAL value."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_heater_delay_20261006/REPORT_RU.md",
+          "scope": "APP11 event-to-write path; numeric CAL-to-table link open"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "The numeric producer for the saved MzDelay CAL state is not established. A direct path from this state to the working MZ delay table was not found in the bounded APP11 analysis.",
+          "status": "OPEN",
+          "references": [
+            "docs/CAL_USER_UNITS_RU.md",
+            "research/cal_mc_mz_context_20261008/REPORT_RU.md"
+          ]
+        },
+        "application": {
+          "text": "The working MZ table supplies runtime delay values. State-update events can reach software writes, but those writes do not prove that the saved MzDelay value is used numerically.",
+          "status": "OPEN",
+          "references": [
+            "docs/CAL_USER_UNITS_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "The checked working MZ table is selected by function and 2W/4W conditions. A selection route from saved MzDelay CAL into those table entries is not established.",
+          "status": "OPEN",
+          "references": [
+            "research/cal_mc_mz_packet_time_20261008/REPORT_RU.md",
+            "docs/CAL_USER_UNITS_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The CAL state has update-event behavior, but no confirmed numeric transfer from it to the working MZ table. The field is not classified as unused.",
+          "status": "PARTIAL",
+          "references": [
+            "docs/CAL_USER_UNITS_RU.md"
+          ]
+        },
+        "related": {
+          "text": "McDelay is another saved CAL state with the same unresolved table bridge. CurrentSrcDelay's use of runtime McDelay does not prove use of the saved McDelay or MzDelay fields.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_current_delay_units_20261008/evidence.json",
+            "docs/CAL_USER_UNITS_RU.md"
+          ]
+        }
+      }
+    },
+    "PrechargePwm": {
+      "summary": "A software PWM control value converted through integer and low-16-bit steps before an upper clamp and control write.",
+      "usage_status": "established",
+      "limitations": [
+        "Conversion order is material: this is not a simple clamp to 0–255, and no lower clamp is shown; physical PWM output is unverified."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_freq_pwm_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded digital writer path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "A complete calibration producer that derives PrechargePwm from an electrical target has not been established. The consumer's code conversion does not establish a recommended CAL domain or duty target.",
+          "status": "OPEN",
+          "references": [
+            "research/cal_app11_freq_pwm_20261006/REPORT_RU.md"
+          ]
+        },
+        "application": {
+          "text": "APP11 converts P+0.5 to an unsigned integer, keeps the low 16 bits, applies an upper limit of 255, caches the result, and requests control selector 0x0E. There is no separate lower clamp in the checked sequence. Under the established stable enabled E127/A1 ordinary PWM profile, an accepted code D gives low(PRE_ADJ_N)=(D+1)/256.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_freq_pwm_20261006/REPORT_RU.md",
+            "docs/CAL_USER_UNITS_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "The checked path reads one shared PrechargePwm scalar and sends one control request; no range or terminal selection is established.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_freq_pwm_20261006/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "A state update can invoke the software setter and issue the selector request. The duty relation applies when that request is accepted and the stated profile conditions hold.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_freq_pwm_20261006/REPORT_RU.md",
+            "docs/CAL_USER_UNITS_RU.md"
+          ]
+        },
+        "related": {
+          "text": "For CAL inputs P in [0,255], the viewer reports D=floor(P+0.5) and the conditional low duty as 100×(D+1)/256 percent for the established stable enabled profile.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "docs/CAL_USER_UNITS_RU.md",
+            "utility/development/v1.0/utility3441x/cal_display.py"
+          ]
+        }
+      }
+    },
+    "Res4Gain": {
+      "summary": "Four-wire resistance selects a gain bank by range and offset-compensation branch, then scales by total packet weight.",
+      "usage_status": "established",
+      "limitations": [
+        "CAP dependence is limited to five named members; high ranges also have a conditional Divider10M correction."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded four-wire RES path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; ordinary software result path. This describes use, not the accuracy of this saved value.",
+        "calculation": {
+          "text": "The documented adjustment uses a resistance reference. In the bounded APP11 calGain paths, the selected existing gain is multiplied by k=argument/X. For range indices 6 and above, X is first replaced by Divider10M*X/(Divider10M+X). The exact upstream meaning of the captured operand X and complete OC branch selection remain under review. A confirmed range-index-5 branch copies the 10 Mohm gain into the 100 Mohm and 1 Gohm states, separately for the ordinary 2-wire and 4-wire banks. Those high-range values are not independently fitted in that branch.",
+          "status": "PARTIAL",
+          "references": [
+            "research/rc15_cal_lifecycle_20261008/res_gain_peer.md",
+            "docs/CAL_DC_GAIN_ORIGIN_RU.md"
+          ]
+        },
+        "application": {
+          "text": "Let G be the selected stored gain, O the selected stored offset, T the total packet weight, and S the accumulated signed integer input. Firmware computes g = G / T and o = trunc(O*T + 0.5) for O*T > 0, otherwise o = trunc(O*T - 0.5). The linear stage is y0 = double_signed(wrap64(S - o)) * g. trunc means conversion toward zero within the supported numeric domain. These coefficients are applied by PPC software in this path; the endpoint is a reading calculation, not a directly programmed FPGA gain/offset register. Resistance uses an absolute-value stage. On ordinary 100 Mohm and 1 Gohm ranges, the enabled divider stage uses y*D/(D-y), where D is Divider10M; its guards and overload branches still apply.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "research/cal_app11_dcv_20261006/REPORT_RU.md",
+            "DCPacketProcessor::setCalCoeffs @0x42851C; ComputeDCFinalReading::operator() @0x60DA98"
+          ]
+        },
+        "selection": {
+          "text": "4-wire resistance selects the range-specific gain and the Front or Rear offset. Gain is shared between Front and Rear. Separate 2-wire/4-wire banks are used. Offset compensation selects an OC bank for range indices 0..2; the other ranges use the ordinary bank.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "GandalfResFunction::getCalCoeffs @0x337604"
+          ]
+        },
+        "activation": {
+          "text": "The function's syncSoftware path obtains the selected coefficients and passes them to setCalCoeffs. The exact event and timing that activate values after a CAL import are not yet verified. CAL export serializes the current registered values in memory; CAL:STORE separately saves that group to NOR. A successful scalar update does not itself establish a NOR commit.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "docs/CAL_RESTORE_FEASIBILITY_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "The matching Res4Off (Front or Rear) for the same range and OC setting participates in the same linear-stage formula. Divider10M additionally affects the ordinary 100 Mohm and 1 Gohm paths.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md"
+          ]
+        }
+      }
+    },
+    "Res4Off": {
+      "summary": "Four-wire resistance selects an offset bank by range, terminals and offset-compensation branch, then scales by total packet weight with sign-dependent rounding.",
+      "usage_status": "established",
+      "limitations": [
+        "Front/rear and offset-compensation states are separate banks."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded four-wire RES path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; ordinary software result path. This describes use, not the accuracy of this saved value.",
+        "calculation": {
+          "text": "In the checked calOffset write path, O_new=reading_record_value/totalWeight. The resulting double replaces the selected offset scalar through setOnly. The destinations are the named range-indexed 2-wire or 4-wire banks, with separate ordinary/OC and Front/Rear states. This is a stored internal offset, before the gain and resistance conversion stages. The complete surrounding measurement-mode sequence and upstream record processing are not yet reconstructed in this card.",
+          "status": "PARTIAL",
+          "references": [
+            "research/rc15_cal_lifecycle_20261008/res_offsets_peer.md",
+            "docs/CAL_DC_GAIN_ORIGIN_RU.md"
+          ]
+        },
+        "application": {
+          "text": "Let G be the selected stored gain, O the selected stored offset, T the total packet weight, and S the accumulated signed integer input. Firmware computes g = G / T and o = trunc(O*T + 0.5) for O*T > 0, otherwise o = trunc(O*T - 0.5). The linear stage is y0 = double_signed(wrap64(S - o)) * g. trunc means conversion toward zero within the supported numeric domain. These coefficients are applied by PPC software in this path; the endpoint is a reading calculation, not a directly programmed FPGA gain/offset register. Resistance uses an absolute-value stage. On ordinary 100 Mohm and 1 Gohm ranges, the enabled divider stage uses y*D/(D-y), where D is Divider10M; its guards and overload branches still apply.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "research/cal_app11_dcv_20261006/REPORT_RU.md",
+            "DCPacketProcessor::setCalCoeffs @0x42851C; ComputeDCFinalReading::operator() @0x60DA98"
+          ]
+        },
+        "selection": {
+          "text": "4-wire resistance selects the range-specific gain and the Front or Rear offset. Gain is shared between Front and Rear. Separate 2-wire/4-wire banks are used. Offset compensation selects an OC bank for range indices 0..2; the other ranges use the ordinary bank.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "GandalfResFunction::getCalCoeffs @0x337604"
+          ]
+        },
+        "activation": {
+          "text": "The function's syncSoftware path obtains the selected coefficients and passes them to setCalCoeffs. The exact event and timing that activate values after a CAL import are not yet verified. CAL export serializes the current registered values in memory; CAL:STORE separately saves that group to NOR. A successful scalar update does not itself establish a NOR commit.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "docs/CAL_RESTORE_FEASIBILITY_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "The matching Res4Gain for the same range and OC setting participates in the same linear-stage formula. Divider10M additionally affects the ordinary 100 Mohm and 1 Gohm paths.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md"
+          ]
+        }
+      }
+    },
+    "ResGain": {
+      "summary": "Two-wire resistance selects an ordinary or offset-compensated gain bank by range, then scales by total packet weight.",
+      "usage_status": "established",
+      "limitations": [
+        "The ordinary high-range path may also apply a guarded Divider10M correction."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded two-wire RES path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; ordinary software result path. This describes use, not the accuracy of this saved value.",
+        "calculation": {
+          "text": "The documented adjustment uses a resistance reference. In the bounded APP11 calGain paths, the selected existing gain is multiplied by k=argument/X. For range indices 6 and above, X is first replaced by Divider10M*X/(Divider10M+X). The exact upstream meaning of the captured operand X and complete OC branch selection remain under review. A confirmed range-index-5 branch copies the 10 Mohm gain into the 100 Mohm and 1 Gohm states, separately for the ordinary 2-wire and 4-wire banks. Those high-range values are not independently fitted in that branch.",
+          "status": "PARTIAL",
+          "references": [
+            "research/rc15_cal_lifecycle_20261008/res_gain_peer.md",
+            "docs/CAL_DC_GAIN_ORIGIN_RU.md"
+          ]
+        },
+        "application": {
+          "text": "Let G be the selected stored gain, O the selected stored offset, T the total packet weight, and S the accumulated signed integer input. Firmware computes g = G / T and o = trunc(O*T + 0.5) for O*T > 0, otherwise o = trunc(O*T - 0.5). The linear stage is y0 = double_signed(wrap64(S - o)) * g. trunc means conversion toward zero within the supported numeric domain. These coefficients are applied by PPC software in this path; the endpoint is a reading calculation, not a directly programmed FPGA gain/offset register. Resistance uses an absolute-value stage. On ordinary 100 Mohm and 1 Gohm ranges, the enabled divider stage uses y*D/(D-y), where D is Divider10M; its guards and overload branches still apply.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "research/cal_app11_dcv_20261006/REPORT_RU.md",
+            "DCPacketProcessor::setCalCoeffs @0x42851C; ComputeDCFinalReading::operator() @0x60DA98"
+          ]
+        },
+        "selection": {
+          "text": "2-wire resistance selects the range-specific gain and the Front or Rear offset. Gain is shared between Front and Rear. Separate 2-wire/4-wire banks are used. Offset compensation selects an OC bank for range indices 0..2; the other ranges use the ordinary bank.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "GandalfResFunction::getCalCoeffs @0x337604"
+          ]
+        },
+        "activation": {
+          "text": "The function's syncSoftware path obtains the selected coefficients and passes them to setCalCoeffs. The exact event and timing that activate values after a CAL import are not yet verified. CAL export serializes the current registered values in memory; CAL:STORE separately saves that group to NOR. A successful scalar update does not itself establish a NOR commit.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "docs/CAL_RESTORE_FEASIBILITY_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "The matching ResOff (Front or Rear) for the same range and OC setting participates in the same linear-stage formula. Divider10M additionally affects the ordinary 100 Mohm and 1 Gohm paths.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md"
+          ]
+        }
+      }
+    },
+    "ResOff": {
+      "summary": "Two-wire resistance selects an offset bank by range, terminals and offset-compensation branch, then scales by total packet weight with sign-dependent rounding.",
+      "usage_status": "established",
+      "limitations": [
+        "Front/rear and offset-compensation states are separate banks."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+          "scope": "APP11 bounded two-wire RES path"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; ordinary software result path. This describes use, not the accuracy of this saved value.",
+        "calculation": {
+          "text": "In the checked calOffset write path, O_new=reading_record_value/totalWeight. The resulting double replaces the selected offset scalar through setOnly. The destinations are the named range-indexed 2-wire or 4-wire banks, with separate ordinary/OC and Front/Rear states. This is a stored internal offset, before the gain and resistance conversion stages. The complete surrounding measurement-mode sequence and upstream record processing are not yet reconstructed in this card.",
+          "status": "PARTIAL",
+          "references": [
+            "research/rc15_cal_lifecycle_20261008/res_offsets_peer.md",
+            "docs/CAL_DC_GAIN_ORIGIN_RU.md"
+          ]
+        },
+        "application": {
+          "text": "Let G be the selected stored gain, O the selected stored offset, T the total packet weight, and S the accumulated signed integer input. Firmware computes g = G / T and o = trunc(O*T + 0.5) for O*T > 0, otherwise o = trunc(O*T - 0.5). The linear stage is y0 = double_signed(wrap64(S - o)) * g. trunc means conversion toward zero within the supported numeric domain. These coefficients are applied by PPC software in this path; the endpoint is a reading calculation, not a directly programmed FPGA gain/offset register. Resistance uses an absolute-value stage. On ordinary 100 Mohm and 1 Gohm ranges, the enabled divider stage uses y*D/(D-y), where D is Divider10M; its guards and overload branches still apply.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "research/cal_app11_dcv_20261006/REPORT_RU.md",
+            "DCPacketProcessor::setCalCoeffs @0x42851C; ComputeDCFinalReading::operator() @0x60DA98"
+          ]
+        },
+        "selection": {
+          "text": "2-wire resistance selects the range-specific gain and the Front or Rear offset. Gain is shared between Front and Rear. Separate 2-wire/4-wire banks are used. Offset compensation selects an OC bank for range indices 0..2; the other ranges use the ordinary bank.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "GandalfResFunction::getCalCoeffs @0x337604"
+          ]
+        },
+        "activation": {
+          "text": "The function's syncSoftware path obtains the selected coefficients and passes them to setCalCoeffs. The exact event and timing that activate values after a CAL import are not yet verified. CAL export serializes the current registered values in memory; CAL:STORE separately saves that group to NOR. A successful scalar update does not itself establish a NOR commit.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md",
+            "docs/CAL_RESTORE_FEASIBILITY_RU.md",
+            "docs/CAL_ADC_DCOFFSET_ORIGIN_RU.md"
+          ]
+        },
+        "related": {
+          "text": "The matching ResGain for the same range and OC setting participates in the same linear-stage formula. Divider10M additionally affects the ordinary 100 Mohm and 1 Gohm paths.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_dci_res_20261006/REPORT_RU.md"
+          ]
+        }
+      }
+    },
+    "flatness": {
+      "summary": "Per-range ACI and ACV FIR coefficient vectors passed as signed low-16-bit words through the ordinary firmware writer.",
+      "usage_status": "established",
+      "limitations": [
+        "These are vectors, not individually known frequency taps; firmware writes do not prove FPGA acceptance or an instrument frequency response."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_fir_bindings_20261006/REPORT_RU.md",
+          "scope": "APP11 770-row source-to-holder and ordinary writer binding"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "The checked APP11 evidence binds 770 stored ACV/ACI flatness rows to named holders and the ordinary writer, but does not close how every vector is measured or fitted. Existing conditional plots are model projections under stated clock/profile assumptions, not complete response measurements.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_fir_bindings_20261006/REPORT_RU.md",
+            "docs/CAL_FIR_PROJECTION_RU.md"
+          ]
+        },
+        "application": {
+          "text": "The ordinary firmware writer passes vector entries as signed low-16-bit words to the control path. A stored vector is consumed as a sequence; an individual entry is not assigned an independently proven frequency tap, and firmware requests do not prove FPGA acceptance.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_fir_bindings_20261006/REPORT_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "APP11 binds distinct ACI and ACV vectors by range/profile holders. Exact active vector, tap count, clock/profile conditions, and complete hardware response depend on configuration and remain bounded by the respective evidence.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_fir_bindings_20261006/REPORT_RU.md",
+            "docs/CAL_FIR_PROJECTION_RU.md",
+            "docs/CAL_APP11_STATUS_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The ordinary writer issues the software coefficient requests from the current holders. The source evidence does not prove FPGA acceptance, complete atomic activation, or an instrument frequency response after CAL import.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_fir_bindings_20261006/REPORT_RU.md",
+            "docs/CAL_APP11_STATUS_RU.md"
+          ]
+        },
+        "related": {
+          "text": "lp is a separate shared ACI/ACV low-pass vector family. Both are vectors of stored words; do not assign one frequency to a coefficient solely from its index.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_fir_bindings_20261006/REPORT_RU.md",
+            "docs/CAL_FIR_PROJECTION_RU.md"
+          ]
+        }
+      }
+    },
+    "lp": {
+      "summary": "Shared ACI and ACV low-pass FIR coefficient vectors passed as signed low-16-bit words through the ordinary firmware writer.",
+      "usage_status": "established",
+      "limitations": [
+        "These are vectors, not individually known frequency taps; firmware writes do not prove FPGA acceptance or an instrument frequency response."
+      ],
+      "evidence": [
+        {
+          "path": "research/cal_app11_fir_bindings_20261006/REPORT_RU.md",
+          "scope": "APP11 140-row source-to-holder and ordinary writer binding"
+        }
+      ],
+      "lifecycle": {
+        "schema": "cal_lifecycle.v1",
+        "scope": "34411A APP 2.43; bounded software lifecycle evidence only.",
+        "calculation": {
+          "text": "The APP11 evidence maps 140 stored ACI/ACV low-pass rows to holders and the ordinary writer, but the complete calibration procedure and fitted-vector derivation are not established. Plot projections are conditional software models, not physical response measurements.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_fir_bindings_20261006/REPORT_RU.md",
+            "docs/CAL_FIR_PROJECTION_RU.md"
+          ]
+        },
+        "application": {
+          "text": "The ordinary writer sends each ACI/ACV low-pass entry as a signed low-16-bit word using mode 1 selectors 0x0600+i. The index is a stored-vector position, not an independently established frequency.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_fir_bindings_20261006/REPORT_RU.md"
+          ]
+        },
+        "selection": {
+          "text": "APP11 has two separate 70-entry holders: AciLpFilter, shared across ACI ranges, and AcvLpFilter, shared across ACV ranges. The corresponding function sync selects its holder; these vectors are not one vector shared between ACI and ACV.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_fir_bindings_20261006/REPORT_RU.md"
+          ]
+        },
+        "activation": {
+          "text": "The ordinary writer issues coefficient requests from the selected current holder. Complete refresh after CAL import remains unresolved.",
+          "status": "PARTIAL",
+          "references": [
+            "research/cal_app11_fir_bindings_20261006/REPORT_RU.md",
+            "docs/CAL_APP11_STATUS_RU.md"
+          ]
+        },
+        "related": {
+          "text": "flatness is a distinct per-range vector family. Vector positions are storage indexes and should not be treated as known frequencies without an explicit profile projection.",
+          "status": "PROVEN_STATIC",
+          "references": [
+            "research/cal_app11_fir_bindings_20261006/REPORT_RU.md",
+            "docs/CAL_FIR_PROJECTION_RU.md"
+          ]
+        }
+      }
+    }
   }
 }

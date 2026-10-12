@@ -1,29 +1,37 @@
 """Read-only CAL journal catalog and byte-exact coefficient comparison."""
 from __future__ import annotations
 
-import math
 import struct
 
-from .offline import detect_nor_order, parse_cal_payload, sha256
-from .cal_display import build_display
+from .offline import detect_nor_order, parse_cal_payload, sha256, NOR_SIZE
+from .cal_engine import CalSnapshot, compare_snapshots
 
 REGION_OFFSET = 0x5C0000
 SLOT_SIZE = 0x2000
 SLOT_COUNT = 32
+REGION_SIZE = SLOT_SIZE * SLOT_COUNT
 _STATES = {0xA5: "Current", 0xA0: "Fallback", 0xF5: "Incomplete", 0: "Historical (retired)"}
 
 
 def scan_cal_history(raw: bytes, *, source: str = "<memory>") -> dict:
-    """Accept a complete NOR dump; never infer journal order from CAL payloads."""
-    cpu, order = detect_nor_order(raw)
-    result = scan_cal_region(cpu[REGION_OFFSET:REGION_OFFSET + SLOT_SIZE * SLOT_COUNT])
+    """Accept full NOR or an exact CPU-order journal saved by the utility."""
+    if len(raw) == REGION_SIZE:
+        cpu, order = raw, 'cpu'
+        region, kind = raw, 'cal-journal'
+    elif len(raw) >= NOR_SIZE:
+        # Preserve the existing NOR reader's handling of programmer trailers.
+        cpu, order = detect_nor_order(raw)
+        region, kind = cpu[REGION_OFFSET:REGION_OFFSET + REGION_SIZE], 'nor'
+    else:
+        raise ValueError('Select an 8 MiB NOR dump or a 256 KiB CPU-order CAL journal.')
+    result = scan_cal_region(region)
     result.update(source=source, inputOrder=order, sha256Input=sha256(raw),
-                  sha256CPUOrder=sha256(cpu))
+                  sha256CPUOrder=sha256(cpu), inputKind=kind, sha256Region=sha256(region))
     return result
 
 
 def scan_cal_region(region: bytes) -> dict:
-    """Parse an explicitly CPU-order 256 KiB journal, mainly for bounded tests."""
+    """Parse an explicitly CPU-order 256 KiB journal, preserving damaged slots."""
     if len(region) != SLOT_SIZE * SLOT_COUNT:
         raise ValueError("CAL journal must contain exactly 32 slots of 8192 bytes")
     slots = []
@@ -58,7 +66,7 @@ def scan_cal_region(region: bytes) -> dict:
                 seen.setdefault(key, slot['id'])
                 if version == 45 and length == 4924:
                     payload = struct.pack('>HII', version, length, check) + body
-                    slot.update(report=parse_cal_payload(payload, explain=True), comparable=True)
+                    slot.update(CalSnapshot(parse_cal_payload(payload, explain=True), body.hex()).as_record())
                 else:
                     slot['issue'] = "Unsupported CAL schema; coefficient interpretation unavailable"
         slots.append(slot)
@@ -76,34 +84,5 @@ def scan_cal_region(region: bytes) -> dict:
 
 
 def compare_slots(reference: dict, selected: dict) -> list[dict]:
-    """Compare schema45 bytes, including signed zero and NaN representations."""
-    if not reference.get('comparable') or not selected.get('comparable'):
-        raise ValueError("Comparison requires two intact, supported CAL records")
-    left = reference['report']['schema45']['values']
-    right = selected['report']['schema45']['values']
-    a, b = bytes.fromhex(reference['bodyHex']), bytes.fromhex(selected['bodyHex'])
-    if len(a) != 4924 or len(b) != 4924 or len(left) != 1072 or len(right) != 1072:
-        raise ValueError("Invalid schema45 comparison span")
-    displays_a, displays_b = build_display(reference['report']), build_display(selected['report'])
-    rows = []
-    for x, y, da, db in zip(left, right, displays_a, displays_b):
-        if any(x[k] != y[k] for k in ('name', 'offset', 'type')):
-            raise ValueError("CAL field identity mismatch")
-        offset = x['offset']
-        width = 8 if x['type'] == 'double' else 4
-        changed = a[offset:offset + width] != b[offset:offset + width]
-        delta = '0'
-        if changed:
-            vx, vy = x['value'], y['value']
-            if math.isfinite(vx) and math.isfinite(vy):
-                difference = vy - vx
-                delta = format(difference, '.8g') if math.isfinite(difference) else 'Not finite'
-                if difference == 0:
-                    delta = 'Bytes differ (e.g. signed zero)'
-            else:
-                delta = 'Non-finite; bytes differ'
-        rows.append(dict(name=x['name'], title=da['title'], offset=offset, type=x['type'],
-                         reference=da['value'], selected=db['value'], delta=delta,
-                         changed=changed, referenceRaw=repr(x['value']), selectedRaw=repr(y['value']),
-                         referenceHex=a[offset:offset+width].hex(), selectedHex=b[offset:offset+width].hex()))
-    return rows
+    """Compatibility adapter for journal consumers; calculations live in cal_engine."""
+    return compare_snapshots(reference, selected)

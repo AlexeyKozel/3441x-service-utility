@@ -1,6 +1,6 @@
 """Safety-focused service utility for HP/Agilent 34410A, 34411A and L4411A."""
 
-__version__ = "1.0.0-rc14"
+__version__ = "1.0.0-rc15"
 
 # RC14 permits only 34410A/34411A APP (instrumentimage) packages through the
 # broad updater UI. Recovery/updateimage upload stays disabled. Identity

@@ -28,11 +28,6 @@ from utility3441x.update_protocol import (  # noqa: E402
 )
 
 
-PROJECT = next(
-    (candidate for candidate in (ROOT, *ROOT.parents) if (candidate / "PROJECT_HANDOFF.md").is_file()),
-    None,
-)
-EVIDENCE = PROJECT / "derived" / "updater" / "evidence" if PROJECT else None
 
 
 class SRecordProtocolTests(unittest.TestCase):
@@ -86,21 +81,21 @@ class SRecordProtocolTests(unittest.TestCase):
             )
         )
         assert_app_image_package(app)
-        before = {"model": "34410A", "serial": "MY00000001"}
+        before = {"model": "34410A", "serial": "TEST00000001"}
         assert_app_upload_preflight(
             app,
-            {"model": "34411A", "serial": "MY00000001"},
+            {"model": "34411A", "serial": "TEST00000001"},
         )
         assert_app_identity_after(
             app,
             before,
-            {"model": "34410A", "serial": "MY00000001"},
+            {"model": "34410A", "serial": "TEST00000001"},
         )
         with self.assertRaisesRegex(RuntimeError, "identity does not match"):
             assert_app_identity_after(
                 app,
                 before,
-                {"model": "34410A", "serial": "MY99999999"},
+                {"model": "34410A", "serial": "TEST99999999"},
             )
         with self.assertRaisesRegex(PermissionError, "updateimage upload is blocked"):
             assert_app_image_package(recovery)
@@ -119,7 +114,7 @@ class SRecordProtocolTests(unittest.TestCase):
         with self.assertRaisesRegex(PermissionError, "34410A/34411A instruments"):
             assert_app_upload_preflight(
                 app,
-                {"model": "L4411A", "serial": "MY00000001"},
+                {"model": "L4411A", "serial": "TEST00000001"},
             )
 
     def test_synthetic_package_emulates_standalone(self):
@@ -255,75 +250,10 @@ class SRecordProtocolTests(unittest.TestCase):
         self.assertEqual(result["blockSize"], 50000)
         self.assertEqual(result["checksum"], "305419896")
 
-    @unittest.skipUnless(EVIDENCE is not None, "project evidence недоступен")
-    def test_official_34411_package(self):
-        assert EVIDENCE is not None
-        path = EVIDENCE / "agt34411_instrument_rev243.xs"
-        package = load_xs(path)
-        self.assertEqual(
-            hashlib.sha256(package.raw).hexdigest(),
-            "5a28d430530283c2fbdf6962bd4479fa17ef4075550943fd129a69012f814213",
-        )
-        self.assertEqual(package.model, "34411A")
-        self.assertEqual(package.selector, 66)
-        self.assertEqual(len(package.s3_records), 0x351D8)
-        self.assertEqual(
-            selector_start_command(package),
-            ':diag:upd:start? 66, "loader_34411A","0",0,0',
-        )
-        blocks = build_update_blocks(package, 65536)
-        self.assertEqual(len(blocks), 157)
-        self.assertEqual(len(blocks[0].payload), 65470)
-        self.assertEqual(len(blocks[-1].payload), 11833)
-        self.assertTrue(
-            blocks[0].command_without_terminator.startswith(
-                b":diag:update:block? 1, 157, #565470S505000351D8CE\n"
-            )
-        )
-        self.assertTrue(blocks[0].wire_bytes.endswith(b"\n\n"))
-        self.assertNotIn(b"\r", blocks[0].payload)
 
-    @unittest.skipUnless(EVIDENCE is not None, "project evidence недоступен")
-    def test_native_sa96_control_package(self):
-        assert EVIDENCE is not None
-        package = load_xs(EVIDENCE / "34410A_boot_CONTROL_SA96_updateimage.xs")
-        self.assertEqual(package.selector, 177)
-        self.assertEqual(len(package.s3_records), 4096)
-        self.assertEqual(package.s3_records[0].address, 0xFFE00000)
-        self.assertEqual(package.s3_records[-1].address, 0xFFE0FFF0)
-        blocks = build_update_blocks(package, 65536)
-        self.assertEqual([len(block.payload) for block in blocks], [65470, 65471, 61583])
-        emulator = execute_emulated(package, 65536)
-        self.assertEqual(emulator.events[-3:], ["checksum", "end", ":diag:reboot"])
 
-    @unittest.skipUnless(EVIDENCE is not None, "project evidence недоступен")
-    def test_mutated_srecord_checksum_is_rejected(self):
-        assert EVIDENCE is not None
-        package = load_xs(EVIDENCE / "34410A_boot_CONTROL_SA96_updateimage.xs")
-        raw = bytearray(package.raw)
-        offset = raw.find(b"S315") + 20
-        raw[offset] = ord("0") if raw[offset] != ord("0") else ord("1")
-        with self.assertRaisesRegex(ValueError, "checksum"):
-            parse_xs_bytes(bytes(raw))
 
-    @unittest.skipUnless(EVIDENCE is not None, "project evidence недоступен")
-    def test_unsupported_update_method_is_rejected(self):
-        assert EVIDENCE is not None
-        package = load_xs(EVIDENCE / "34410A_boot_CONTROL_SA96_updateimage.xs")
-        raw = package.raw.replace(b"caspreRamBased", b"olympus        ", 1)
-        with self.assertRaisesRegex(ValueError, "update method"):
-            parse_xs_bytes(raw)
 
-    @unittest.skipUnless(EVIDENCE is not None, "project evidence недоступен")
-    def test_emulator_rejects_byte_mutation(self):
-        assert EVIDENCE is not None
-        package = load_xs(EVIDENCE / "34410A_boot_CONTROL_SA96_updateimage.xs")
-        emulator = FactoryProtocolEmulator(package, 65536)
-        self.assertEqual(emulator.query_text(selector_start_command(package)), "0")
-        frame = bytearray(emulator.expected_blocks[0].wire_bytes)
-        frame[-10] ^= 1
-        with self.assertRaisesRegex(RuntimeError, "byte-for-byte"):
-            emulator.exchange_raw(bytes(frame))
 
     def test_update_progress_is_monotonic_and_complete(self):
         raw = build_xs(

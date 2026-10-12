@@ -17,6 +17,7 @@ from . import (
 )
 from .app_update import wait_for_final_app_identity
 from .backup import create_service_backup, verify_service_backup
+from .cal_files import save_cal_backup, read_operating_hours
 from .flash_model import simulate_packages_on_nor
 from .identity import (
     REC_BASE,
@@ -129,6 +130,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command", required=True)
 
+    reference = sub.add_parser("scpi-reference", help="Browse the offline hidden SCPI reference (no instrument connection)")
+    reference.add_argument("--search", default="", help="Filter reference entries")
+    reference.add_argument("--format", choices=("json", "text"), default="json",
+                           help="Output format (default: json)")
+    reference.add_argument("--technical-search", action="store_true",
+                           help="Also search hidden registration and evidence fields")
     inspect_nor = sub.add_parser("inspect-nor", help="Inspect a complete NOR dump")
     inspect_nor.add_argument("image", type=Path)
 
@@ -165,7 +172,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     backup_cal = sub.add_parser("backup-cal", help="Read and save CAL")
     backup_cal.add_argument("--resource", required=True)
-    backup_cal.add_argument("--output", required=True, type=Path)
+    cal_output = backup_cal.add_mutually_exclusive_group(required=True)
+    cal_output.add_argument("--output-dir", type=Path, help="Save using instrument serial and UTC date/time")
+    cal_output.add_argument("--output", type=Path, help="Explicit filename (legacy option; no automatic naming)")
 
     nor_dump = sub.add_parser("dump-nor", help="Read the complete NOR with resume support")
     nor_dump.add_argument("--resource", required=True)
@@ -226,6 +235,17 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.command == "scpi-reference":
+        from .scpi_reference import load_reference, search_commands, command_text
+        data = load_reference()
+        rows = search_commands(data, args.search, technical=args.technical_search)
+        if args.format == "text":
+            print(('\n\n' + '-' * 72 + '\n\n').join(
+                command_text(row, technical=args.technical_search) for row in rows)
+                if rows else 'No matching commands.')
+        else:
+            _print_json({**data, 'commands': rows})
+        return 0
     if args.command == "inspect-nor":
         _print_json(inspect_nor_file(args.image))
         return 0
@@ -306,10 +326,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "backup-cal":
         with VisaInstrument(args.resource) as instrument:
+            identity = instrument.identity()
             payload, report = instrument.read_calibration()
-            args.output.write_bytes(payload)
-            _write_json(args.output.with_suffix(args.output.suffix + ".json"), report)
-            _print_json(report)
+            operating_time = read_operating_hours(instrument)
+        result = save_cal_backup(args.output_dir or args.output.parent, payload, identity,
+                                 explicit_path=args.output, operating_time=operating_time)
+        _print_json(result['report'])
         return 0
     if args.command == "dump-nor":
         with VisaInstrument(args.resource) as instrument:

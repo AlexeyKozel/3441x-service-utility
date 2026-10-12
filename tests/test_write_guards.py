@@ -20,8 +20,8 @@ def minimal_plan(package_bytes: bytes) -> IdentityWritePlan:
     snapshot = FreshSa96Snapshot(
         session_id="session",
         resource="TCPIP0::198.51.100.7::inst0::INSTR",
-        idn="Agilent Technologies,34410A,MY00000001,2.43-2.40-0.09-46-09",
-        serial="MY00000001",
+        idn="Agilent Technologies,34410A,TEST00000001,2.43-2.40-0.09-46-09",
+        serial="TEST00000001",
         current_model="34410A",
         app_revision="2.43-2.40-0.09-46-09",
         sa96=bytes(SA96_SIZE),

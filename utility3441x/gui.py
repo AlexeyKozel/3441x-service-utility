@@ -22,6 +22,7 @@ from . import (
 )
 from .app_update import wait_for_final_app_identity
 from .backup import create_service_backup
+from .cal_files import save_cal_backup, read_operating_hours
 from .identity import (
     REC_BASE,
     SA96_SIZE,
@@ -62,7 +63,7 @@ def _format_eta(seconds: float | None) -> str:
 class ServiceUtilityGui(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("3441x Service Utility 1.0 RC14")
+        self.title("3441x Service Utility 1.0 RC15")
         self.geometry("1050x760")
         self.events: queue.Queue[tuple[str, object]] = queue.Queue()
         self.cli = Path(__file__).resolve().parents[1] / "3441x_service_utility.py"
@@ -112,15 +113,23 @@ class ServiceUtilityGui(tk.Tk):
         identity = ttk.Frame(tabs, padding=8)
         tabs.add(offline, text="Offline analysis")
         tabs.add(cal_history, text="CAL history")
-        tabs.add(backup, text="Backup")
+        tabs.add(backup, text="Backup / Restore")
         tabs.add(firmware, text="Firmware")
         tabs.add(identity, text="Boot identity")
+        from .scpi_reference import build_reference_tab
+        from .scpi_links import open_topic
+        tabs.add(build_reference_tab(tabs, navigate_topic=lambda topic: open_topic(self, topic)),
+                 text="Hidden SCPI reference")
 
         ttk.Button(offline, text="Inspect NOR dump…", command=self._inspect_nor).pack(anchor="w", pady=3)
         ttk.Button(offline, text="Inspect CAL payload…", command=self._inspect_cal).pack(anchor="w", pady=3)
-        ttk.Label(cal_history, text="Compare current and retained CAL records from a complete NOR dump.").pack(anchor="w", pady=3)
+        ttk.Label(cal_history, text="Compare current and retained CAL records from a NOR dump or CAL journal backup.").pack(anchor="w", pady=3)
         ttk.Label(cal_history, text="A CAL:DATA:ALL payload contains one array only; it cannot provide slot history.").pack(anchor="w", pady=3)
-        ttk.Button(cal_history, text="Open NOR CAL history…", command=self._inspect_cal_history).pack(anchor="w", pady=8)
+        ttk.Button(cal_history, text="Open NOR / CAL journal…", command=self._inspect_cal_history).pack(anchor="w", pady=8)
+        ttk.Button(cal_history, text="Compare CAL backups…", command=self._compare_cal_backups).pack(anchor="w", pady=8)
+        from .file_formats_help import show_file_formats
+        ttk.Button(cal_history, text="Backup file formats…", command=lambda: show_file_formats(self)).pack(anchor="w", pady=3)
+        ttk.Label(cal_history, text="Select multiple saved CAL payloads to compare snapshots and dated coefficient changes.").pack(anchor="w", pady=3)
         ttk.Button(offline, text="Inspect .xs package…", command=self._inspect_xs).pack(anchor="w", pady=3)
         ttk.Button(
             offline,
@@ -130,11 +139,21 @@ class ServiceUtilityGui(tk.Tk):
 
         ttk.Label(
             backup,
-            text="These operations use supported read-only instrument requests.",
+            text="Save reads data. Restore CAL writes working calibration and requires separate confirmation for NOR storage.",
         ).pack(anchor="w", pady=(0, 8))
-        ttk.Button(backup, text="Save CAL…", command=self._backup_cal).pack(anchor="w", pady=3)
-        ttk.Button(backup, text="Read complete NOR…", command=self._dump_nor).pack(anchor="w", pady=3)
-        ttk.Button(backup, text="Create service backup…", command=self._service_backup).pack(anchor="w", pady=3)
+        calibration = ttk.LabelFrame(backup, text="Calibration", padding=8)
+        ttk.Button(backup, text="Backup file formats…", command=lambda: show_file_formats(self)).pack(anchor="w", pady=(0, 8))
+        calibration.pack(fill="x", pady=(0, 10))
+        ttk.Button(calibration, text="Save CAL…", command=self._backup_cal).pack(anchor="w", pady=3)
+        ttk.Button(calibration, text="Save CAL history…", command=self._backup_cal_history).pack(anchor="w", pady=3)
+        ttk.Label(calibration, text="All 32 slots (256 KiB). Do not operate the instrument while the CAL journal backup is in progress.").pack(anchor="w", pady=3)
+        ttk.Label(calibration, text="Filenames include the instrument serial and UTC save date/time.").pack(anchor="w", pady=3)
+        ttk.Button(calibration, text="Restore CAL…", command=self._restore_cal).pack(anchor="w", pady=3)
+        ttk.Label(calibration, text="Restore: 34411A APP 2.43, schema45; offline-tested, hardware qualification pending.").pack(anchor="w", pady=3)
+        memory_backup = ttk.LabelFrame(backup, text="NOR and service backup", padding=8)
+        memory_backup.pack(fill="x")
+        ttk.Button(memory_backup, text="Read complete NOR…", command=self._dump_nor).pack(anchor="w", pady=3)
+        ttk.Button(memory_backup, text="Create service backup…", command=self._service_backup).pack(anchor="w", pady=3)
 
         package_row = ttk.Frame(firmware)
         package_row.pack(fill="x")
@@ -188,7 +207,7 @@ class ServiceUtilityGui(tk.Tk):
         ttk.Label(
             identity,
             text=(
-                "RC14: identity writing and APP upload are "
+                "Identity writing and APP upload are "
                 "enabled, while general Recovery upload remains blocked. Review the "
                 "hash-bound plan in the Yes/No confirmation before proceeding."
             ),
@@ -249,6 +268,9 @@ class ServiceUtilityGui(tk.Tk):
                 elif kind == "cal_history":
                     from .cal_history_viewer import CalHistoryViewer
                     CalHistoryViewer(self, payload["path"], payload["history"])
+                elif kind == "cal_snapshots":
+                    from .cal_snapshot_viewer import CalSnapshotViewer
+                    CalSnapshotViewer(self, payload)
                 elif kind == "warning":
                     self.output.insert("end", str(payload) + "\n", "warning")
                     self.output.see("end")
@@ -276,7 +298,7 @@ class ServiceUtilityGui(tk.Tk):
                 elif kind == "confirm_yes_no":
                     item = dict(payload)
                     item["answer"]["value"] = messagebox.askyesno(
-                        item["title"], item["message"]
+                        item["title"], item["message"], default=messagebox.NO
                     )
                     item["event"].set()
                 elif kind == "show_info":
@@ -423,8 +445,22 @@ class ServiceUtilityGui(tk.Tk):
 
         self._run_worker("Reading CAL file", operation)
 
+    def _compare_cal_backups(self) -> None:
+        paths = filedialog.askopenfilenames(title="Select CAL backup files to compare",
+                                            filetypes=[("CAL payloads", "*.bin"), ("All files", "*.*")])
+        if not paths:
+            return
+
+        def operation() -> object:
+            from .cal_snapshots import load_snapshots
+            snapshots = load_snapshots(paths)
+            self.events.put(("cal_snapshots", snapshots))
+            return f"Loaded {len(snapshots)} CAL snapshots."
+
+        self._run_worker("Reading CAL backup files", operation)
+
     def _inspect_cal_history(self) -> None:
-        path = filedialog.askopenfilename(title="Select a complete NOR dump for CAL history")
+        path = filedialog.askopenfilename(title="Select a NOR dump or CAL journal backup")
         if not path:
             return
 
@@ -434,7 +470,7 @@ class ServiceUtilityGui(tk.Tk):
             self.events.put(("cal_history", {"path": path, "history": history}))
             return f"CAL history opened: {path}"
 
-        self._run_worker("Reading NOR CAL history", operation)
+        self._run_worker("Reading CAL history", operation)
 
     def _inspect_xs(self) -> None:
         self._file_command("Select an .xs package", "inspect-xs")
@@ -449,21 +485,55 @@ class ServiceUtilityGui(tk.Tk):
             self._run_cli(["simulate-nor-update", nor, self.package.get()])
 
     def _backup_cal(self) -> None:
-        path = filedialog.asksaveasfilename(title="Save CAL", defaultextension=".bin")
-        if not path:
+        folder = filedialog.askdirectory(title="Save CAL — select folder (serial and UTC date/time are added automatically)")
+        if not folder:
             return
         resource = self.resource.get()
 
         def operation() -> object:
             with VisaInstrument(resource) as instrument:
+                identity = instrument.identity()
                 payload, report = instrument.read_calibration()
-            Path(path).write_bytes(payload)
-            Path(path + ".json").write_text(
-                json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-            )
-            return report
+                operating_time = read_operating_hours(instrument)
+            return save_cal_backup(Path(folder), payload, identity, operating_time=operating_time)
 
         self._run_worker("Reading CAL", operation)
+
+    def _backup_cal_history(self) -> None:
+        folder = filedialog.askdirectory(title="Save CAL history — select folder")
+        if not folder:
+            return
+        resource = self.resource.get()
+
+        def operation() -> object:
+            from .cal_journal_backup import backup_cal_journal
+            with VisaInstrument(resource) as instrument:
+                return backup_cal_journal(instrument, Path(folder),
+                                          progress=self._progress_callback("Reading CAL journal"))
+
+        self._run_worker("Opening instrument for CAL journal backup", operation)
+
+    def _restore_cal(self) -> None:
+        path = filedialog.askopenfilename(title="Restore CAL — select a saved CAL payload",
+                                          filetypes=[("CAL payload", "*.bin"), ("All files", "*.*")])
+        if not path:
+            return
+        folder = filedialog.askdirectory(title="Select folder for the mandatory pre-restore CAL backup")
+        if not folder:
+            return
+        resource = self.resource.get()
+
+        def operation() -> object:
+            from .cal_restore import restore_calibration, validate_restore_payload
+            with Path(path).open('rb') as stream:
+                payload = stream.read(4935)
+            validate_restore_payload(payload)
+            with VisaInstrument(resource, timeout_ms=30_000) as instrument:
+                return restore_calibration(instrument, payload, Path(path), Path(folder),
+                                           self._confirm_yes_no_from_worker,
+                                           lambda text: self.events.put(('indeterminate', text)))
+
+        self._run_worker("Preparing CAL restore", operation)
 
     def _dump_nor(self) -> None:
         path = filedialog.asksaveasfilename(title="Save complete NOR", defaultextension=".bin")

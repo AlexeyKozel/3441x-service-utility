@@ -33,7 +33,9 @@ class CalInterpretationTests(unittest.TestCase):
         expected = payload()
         instrument = object.__new__(VisaInstrument)
         transport = MagicMock()
-        transport.read_bytes.side_effect = [b'#4', b'4934', expected]
+        transport.query.side_effect = ['Agilent Technologies,34411A,TEST000001,2.43',
+                                       'Elapsed Time Hours: 266.822']
+        transport.read_bytes.side_effect = [b'#4', b'4934', expected, b'\n']
         instrument._inst = transport
         context = MagicMock()
         context.__enter__.return_value = instrument
@@ -44,6 +46,8 @@ class CalInterpretationTests(unittest.TestCase):
                     self.assertEqual(main(['backup-cal', '--resource', 'offline-test',
                                            '--output', str(path)]), 0)
             self.assertEqual(path.read_bytes(), expected)
+            metadata = json.loads(path.with_suffix('.bin.json').read_text())
+            self.assertEqual(metadata['backup']['operatingTime']['operatingHours'], 266.822)
             output = io.StringIO()
             with contextlib.redirect_stdout(output):
                 self.assertEqual(main(['inspect-cal', str(path), '--explain']), 0)
@@ -51,6 +55,8 @@ class CalInterpretationTests(unittest.TestCase):
             self.assertTrue(report['checksumValid'])
             self.assertEqual(report['schema45']['elementCount'], 1072)
         transport.write.assert_called_once_with('CAL:DATA:ALL?')
+        self.assertEqual([c.args[0] for c in transport.query.call_args_list],
+                         ['*IDN?', 'DIAG:PEEK:FIRMWARE? 24,0,0'])
 
     def test_raw_body_error_through_gui_cli_entrypoint(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -125,6 +131,43 @@ class CalInterpretationTests(unittest.TestCase):
         self.assertEqual(report['schema45']['elementCount'], 1072)
         self.assertEqual(report['interpretation']['status'], 'available')
         self.assertTrue(report['schema45']['meanings']['HeaterGain']['summary'])
+        families = report['schema45']['meanings']
+        covered = {name for name, card in families.items() if 'lifecycle' in card}
+        self.assertEqual(covered, set(families))
+        self.assertEqual(len(covered), 38)
+        for name in covered:
+            card = families[name]['lifecycle']
+            self.assertEqual(card['schema'], 'cal_lifecycle.v1')
+            self.assertIn('34411A APP 2.43', card['scope'])
+            for key in ('calculation', 'application', 'selection', 'activation', 'related'):
+                self.assertTrue(card[key]['text'])
+                self.assertIn(card[key]['status'], {'PROVEN_STATIC', 'DERIVED', 'PARTIAL', 'OPEN', 'DOCUMENTARY'})
+            if name in {'DcvGain', 'DcvOff', 'DciGain', 'DciOff', 'ResGain', 'ResOff', 'Res4Gain', 'Res4Off'}:
+                if name in {'DcvGain', 'DcvOff', 'DciOff'}:
+                    self.assertEqual(card['calculation']['status'], 'PROVEN_STATIC')
+                elif name in {'DciGain', 'ResGain', 'Res4Gain', 'ResOff', 'Res4Off'}:
+                    self.assertEqual(card['calculation']['status'], 'PARTIAL')
+                else:
+                    self.assertEqual(card['calculation']['status'], 'DOCUMENTARY')
+                    self.assertIn('exact APP11 producer equation', card['calculation']['text'])
+                self.assertIn('wrap64(S - o)', card['application']['text'])
+                self.assertIn('not yet verified', card['activation']['text'])
+
+    def test_adc_lifecycle_profiles_and_evidence_boundaries(self):
+        report = parse_cal_payload(payload(), explain=True)
+        families = report['schema45']['meanings']
+        for family in ('Adc_FineMergeGain', 'Adc_LutGain', 'Adc_DcOffset', 'Adc_PiOffset'):
+            rows = [r for r in report['schema45']['values'] if r['meaning']['family'] == family]
+            self.assertEqual({r['meaning']['groupId'] for r in rows}, {0, 1, 2})
+            self.assertEqual(len(rows), 3)
+        dc_origin = families['Adc_DcOffset']['lifecycle']['calculation']
+        self.assertEqual(dc_origin['status'], 'PROVEN_STATIC')
+        self.assertIn('fineDcCancel', dc_origin['text'])
+        self.assertIn('10 sweeps', dc_origin['text'])
+        self.assertIn('rollback', dc_origin['text'])
+        self.assertIn('0x0100', families['Adc_LutGain']['lifecycle']['application']['text'])
+        self.assertIn('0x0200', families['Adc_PiOffset']['lifecycle']['application']['text'])
+        self.assertIn('C_history', families['Adc_FineMergeGain']['lifecycle']['application']['text'])
 
 
 if __name__ == '__main__':

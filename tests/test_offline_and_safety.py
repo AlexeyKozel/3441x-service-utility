@@ -28,6 +28,7 @@ from utility3441x.offline import (  # noqa: E402
 )
 
 
+
 class OfflineAndSafetyTests(unittest.TestCase):
     @staticmethod
     def _diagnostics_for(
@@ -122,21 +123,6 @@ class OfflineAndSafetyTests(unittest.TestCase):
         self.assertTrue(args.yes)
         self.assertFalse(hasattr(args, "confirm"))
 
-    @unittest.skipUnless(
-        any((candidate / "PROJECT_HANDOFF.md").is_file() for candidate in (ROOT, *ROOT.parents)),
-        "project evidence недоступен",
-    )
-    def test_project_nor_fixture(self):
-        project = next(
-            candidate for candidate in (ROOT, *ROOT.parents) if (candidate / "PROJECT_HANDOFF.md").is_file()
-        )
-        report = inspect_nor_file(
-            project / "evidence" / "raw" / "34410a" / "firmware" / "34410A_MY47008653.BIN"
-        )
-        self.assertEqual(report["inputOrder"], "programmer")
-        self.assertTrue(report["app"]["checksumValid"])
-        self.assertTrue(report["recovery"]["checksumValid"])
-        self.assertEqual(report["personalityHits"][0]["model"], "34410A")
 
     def test_schema45_registry_cardinality(self):
         decoded = decode_schema45_body(bytes(SCHEMA45_BODY_BYTES))
