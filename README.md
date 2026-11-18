@@ -1,8 +1,12 @@
-# 3441x Service Utility 1.0 RC15
+# 3441x Service Utility 1.0 RC16
+
+**Offline analysis → Repair NOR dump…** transfers CAL into a free journal slot or explicitly overwrites the CAL journal, and restores APP/Recovery in a new NOR file. The `repair-nor` CLI command provides the same planner (preview by default). Identity comes from decompressed Recovery content. Outputs retain byte order and trailers and include a JSON report. This is offline file repair, not instrument programming; hardware validation has not been performed.
+
+RC16 adds offline NOR repair and reference clarifications for FineMergeGain, MC/MZ/PRE switching and the digital S/Q weighting window. Numerical plot models are unchanged. See the [NOR repair guide](docs/NOR-REPAIR.md).
 
 An unofficial service utility for Agilent/Keysight 34410A and 34411A digital multimeters, with a Windows GUI and command-line interface.
 
-**RC15 has not been tested on a physical instrument. Checks are offline only. CAL restore is experimental and has not been validated on hardware.** See [release notes](RELEASE_NOTES.md) and [SAFETY.md](SAFETY.md).
+**RC16 has not been tested on a physical instrument. Checks are offline only. CAL restore is experimental and has not been validated on hardware.** See [release notes](RELEASE_NOTES.md) and [SAFETY.md](SAFETY.md).
 
 ## Start
 
@@ -40,7 +44,7 @@ Hidden SCPI reference documents 108 forms from static APP11 2.43 analysis, inclu
 
 Existing workflows include diagnostic reads, service backups, offline NOR/XS inspection and simulation, bounded boot-identity switching and original APP image upload. These can modify persistent storage: read [SAFETY.md](SAFETY.md). General updateimage upload remains blocked. APP upload requires a manual power cycle when prompted and does not automatically retry failed blocks.
 
-The [conversion walkthrough](docs/CONVERSION-WALKTHROUGH.md) records earlier hardware work; it is not hardware validation of RC15.
+The [conversion walkthrough](docs/CONVERSION-WALKTHROUGH.md) records earlier hardware work; it is not hardware validation of RC16.
 
 ## Verification
 
@@ -48,6 +52,6 @@ The [conversion walkthrough](docs/CONVERSION-WALKTHROUGH.md) records earlier har
 py -B -X utf8 -m unittest discover -s tests -v
 ```
 
-Private evidence tests are excluded from this public package; synthetic tests use placeholder serial numbers. Tests do not require a connected instrument. Manifest verification checks package integrity, not hardware safety or metrological correctness.
+Evidence-dependent tests may skip when private research fixtures are unavailable. Tests do not require a connected instrument. Manifest verification checks package integrity, not hardware safety or metrological correctness.
 
 Source code is covered by the [MIT License](LICENSE). This project is not affiliated with or endorsed by Keysight, Agilent or Hewlett-Packard.

@@ -63,7 +63,7 @@ def _format_eta(seconds: float | None) -> str:
 class ServiceUtilityGui(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("3441x Service Utility 1.0 RC15")
+        self.title("3441x Service Utility 1.0 RC16")
         self.geometry("1050x760")
         self.events: queue.Queue[tuple[str, object]] = queue.Queue()
         self.cli = Path(__file__).resolve().parents[1] / "3441x_service_utility.py"
@@ -122,6 +122,7 @@ class ServiceUtilityGui(tk.Tk):
                  text="Hidden SCPI reference")
 
         ttk.Button(offline, text="Inspect NOR dump…", command=self._inspect_nor).pack(anchor="w", pady=3)
+        ttk.Button(offline, text="Repair NOR dump…", command=self._repair_nor).pack(anchor="w", pady=3)
         ttk.Button(offline, text="Inspect CAL payload…", command=self._inspect_cal).pack(anchor="w", pady=3)
         ttk.Label(cal_history, text="Compare current and retained CAL records from a NOR dump or CAL journal backup.").pack(anchor="w", pady=3)
         ttk.Label(cal_history, text="A CAL:DATA:ALL payload contains one array only; it cannot provide slot history.").pack(anchor="w", pady=3)
@@ -474,6 +475,10 @@ class ServiceUtilityGui(tk.Tk):
 
     def _inspect_xs(self) -> None:
         self._file_command("Select an .xs package", "inspect-xs")
+
+    def _repair_nor(self) -> None:
+        from .nor_repair_viewer import NorRepairViewer
+        NorRepairViewer(self)
 
     def _simulate_nor(self) -> None:
         if not self.package.get():

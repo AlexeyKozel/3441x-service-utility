@@ -52,10 +52,11 @@
           ]
         },
         "related": {
-          "text": "AciSqNoise adjusts the second moment in the ordinary path before the result is assembled. Both values are selected by the same range index, but follow distinct arithmetic roles.",
+          "text": "AciSqNoise adjusts the second moment in the ordinary path before the result is assembled. Both values are selected by the same range index, but follow distinct arithmetic roles.\n\nThe bounded FPGA datapath accumulates weighted first and second moments: S += x*b and Q += x*x*b. Its established weight recurrence produces h = ones(147) * ones(147) * ones(147), where * means discrete convolution: 439 coefficients, sum 3176523 and maximum 16207. Three banks are staggered by 147 updates; the recurrence repeats after 441 updates. The index counts weight updates, not automatically physical samples. This generated window is separate from saved CAL FIR arrays. Delivery to the multiplier B operand is traced, but a complete physical sampling/NPLC mapping and full instrument frequency response do not follow from the recurrence. S/Q output capture is sequential. Event servicing has no general pending-event counter, so a one-to-one sample mapping also requires the timing profile to meet the service interval.",
           "status": "PROVEN_STATIC",
           "references": [
-            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md",
+            "docs/RC16_FPGA_CLARIFICATIONS_RU.md"
           ]
         }
       }
@@ -158,10 +159,11 @@
           ]
         },
         "related": {
-          "text": "AcvSqNoise changes the second moment before the ordinary output stage. SLOW/MED/FAST mode and debug flags affect downstream behavior, so Gain alone does not define a complete result.",
+          "text": "AcvSqNoise changes the second moment before the ordinary output stage. SLOW/MED/FAST mode and debug flags affect downstream behavior, so Gain alone does not define a complete result.\n\nThe bounded FPGA datapath accumulates weighted first and second moments: S += x*b and Q += x*x*b. Its established weight recurrence produces h = ones(147) * ones(147) * ones(147), where * means discrete convolution: 439 coefficients, sum 3176523 and maximum 16207. Three banks are staggered by 147 updates; the recurrence repeats after 441 updates. The index counts weight updates, not automatically physical samples. This generated window is separate from saved CAL FIR arrays. Delivery to the multiplier B operand is traced, but a complete physical sampling/NPLC mapping and full instrument frequency response do not follow from the recurrence. S/Q output capture is sequential. Event servicing has no general pending-event counter, so a one-to-one sample mapping also requires the timing profile to meet the service interval.",
           "status": "PROVEN_STATIC",
           "references": [
-            "docs/CAL_AC_SCALAR_SELECTION_RU.md"
+            "docs/CAL_AC_SCALAR_SELECTION_RU.md",
+            "docs/RC16_FPGA_CLARIFICATIONS_RU.md"
           ]
         }
       }
@@ -688,12 +690,13 @@
           ]
         },
         "application": {
-          "text": "For the supported finite nonnegative range 0 <= g < 1/64, G = low10(round_half_away(g*65536)); k = G/65536. APP calculates a register value and configAdc passes it to the FPGA. In the ordinary merge path, without overflow or truncation loss, delta_fine = previous_fine - current_fine and M = 65536*C_history + G*delta_fine. C_history is the retained feedback code from the matching pipeline history, not the current raw coarse sample. The exact RTL uses finite-width slices; this algebraic form does not replace those rules. G changes the fine contribution, not the complete reading scale.",
+          "text": "For the supported finite nonnegative range 0 <= g < 1/64, G = low10(round_half_away(g*65536)); k = G/65536. APP calculates a register value and configAdc passes it to the FPGA. In the ordinary merge path, without overflow or truncation loss, delta_fine = previous_fine - current_fine and M = 65536*C_history + G*delta_fine. C_history is the retained feedback code from the matching pipeline history, not the current raw coarse sample. The exact RTL uses finite-width slices; this algebraic form does not replace those rules. G changes the fine contribution, not the complete reading scale.\n\nSelector 0x26 holds G in bits [9:0], merge mode in [11:10], and a separate measurement mode in [13:12]. All three fields latch on the same configuration enable. A coincident datapath capture uses the OLD register values. With signed11 fine difference D, P = (D*unsigned10(G)) mod 2^36. Ordinary merge mode 00 forms M = (signed7(H)*65536 + signed21(P[20:0])) mod 2^23, using the retained feedback H and aligned pipeline history. Mode 01 selects feedback only; 10 selects sign-extended fine history; 11 packs diagnostic fields. These bit fields do not identify the instrument function or the currently loaded ADC profile.",
           "status": "PROVEN_STATIC",
           "references": [
             "research/cal_app11_adc_20261006/REPORT_RU.md",
             "docs/CAL_ADC_PHYSICAL_MEANING_RU.md",
-            "AdcConstants::calculateRegValues @0x26446C; AdcCtrl::configAdc @0x250AE4"
+            "AdcConstants::calculateRegValues @0x26446C; AdcCtrl::configAdc @0x250AE4",
+            "docs/RC16_FPGA_CLARIFICATIONS_RU.md"
           ]
         },
         "selection": {
@@ -1704,10 +1707,11 @@
           ]
         },
         "application": {
-          "text": "A CAL update event can reach register writes, but the numeric working PacketCounts.McDelay comes from mcDelayTable. The event-to-write route does not establish that this saved CAL scalar supplies the table entry.",
+          "text": "A CAL update event can reach register writes, but the numeric working PacketCounts.McDelay comes from mcDelayTable. The event-to-write route does not establish that this saved CAL scalar supplies the table entry.\n\nThe separate FPGA switching state machine has a conditional MZ-to-MC sequence: break 255 clocks, PRE 12495 clocks, break 255 clocks, then MC. At a nominal 106.25 MHz this is 2.4 us, 117.6 us, and 2.4 us. This profile requires configuration values 255/49, force controls clear and continuously released reset; it is not a universal delay. The checked reverse MC-to-MZ transition has a 255-clock break without PRE. These digital phase durations neither establish analog settling nor connect the saved McDelay/MzDelay CAL numbers to FPGA counters. See Calibration reference > Settling and autozero timing.",
           "status": "OPEN",
           "references": [
-            "docs/CAL_USER_UNITS_RU.md"
+            "docs/CAL_USER_UNITS_RU.md",
+            "docs/RC16_FPGA_CLARIFICATIONS_RU.md"
           ]
         },
         "selection": {
@@ -1759,10 +1763,11 @@
           ]
         },
         "application": {
-          "text": "The working MZ table supplies runtime delay values. State-update events can reach software writes, but those writes do not prove that the saved MzDelay value is used numerically.",
+          "text": "The working MZ table supplies runtime delay values. State-update events can reach software writes, but those writes do not prove that the saved MzDelay value is used numerically.\n\nThe separate FPGA switching state machine has a conditional MZ-to-MC sequence: break 255 clocks, PRE 12495 clocks, break 255 clocks, then MC. At a nominal 106.25 MHz this is 2.4 us, 117.6 us, and 2.4 us. This profile requires configuration values 255/49, force controls clear and continuously released reset; it is not a universal delay. The checked reverse MC-to-MZ transition has a 255-clock break without PRE. These digital phase durations neither establish analog settling nor connect the saved McDelay/MzDelay CAL numbers to FPGA counters. See Calibration reference > Settling and autozero timing.",
           "status": "OPEN",
           "references": [
-            "docs/CAL_USER_UNITS_RU.md"
+            "docs/CAL_USER_UNITS_RU.md",
+            "docs/RC16_FPGA_CLARIFICATIONS_RU.md"
           ]
         },
         "selection": {

@@ -27,3 +27,7 @@ When the upload protocol reports completion, follow the prompt and manually powe
 Backups may contain instrument-specific serial, configuration, or calibration-related data. Treat them as sensitive device records and do not publish them. Never restore data from a different physical instrument unless you fully understand the consequences.
 
 The software is provided without warranty. Use it entirely at your own risk. The author accepts no responsibility for bricked or otherwise damaged equipment, lost calibration, lost data, or unsafe behavior.
+
+## Offline NOR repair
+
+RC16 writes new files only. Explicit CAL journal overwrite removes previous journal records from the output, not the input. Preserve original files. A checksum-valid output is not proof of hardware bootability or metrological accuracy. Byte order and programmer trailers are retained; confirm the file size your programmer expects. See [NOR repair guide](docs/NOR-REPAIR.md).

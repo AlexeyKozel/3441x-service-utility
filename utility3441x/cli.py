@@ -139,6 +139,17 @@ def build_parser() -> argparse.ArgumentParser:
     inspect_nor = sub.add_parser("inspect-nor", help="Inspect a complete NOR dump")
     inspect_nor.add_argument("image", type=Path)
 
+    repair = sub.add_parser('repair-nor', help='Plan offline CAL/APP/Recovery repair; save only to a new file')
+    repair.add_argument('target', type=Path)
+    for field in ('cal', 'app', 'recovery'):
+        repair.add_argument('--'+field, type=Path, help='Source file for '+field)
+    repair.add_argument('--order', choices=('auto','cpu','programmer'), default='auto')
+    repair.add_argument('--donor-order', choices=('auto','cpu','programmer'), default='auto')
+    repair.add_argument('--model', choices=('34410A','34411A','L4411A'), help='Required only when target Recovery content is unknown')
+    repair.add_argument('--restore-reset', action='store_true', help='Also restore reset vector from Recovery source')
+    repair.add_argument('--overwrite-cal-journal', action='store_true', help='Replace all CAL slots in the output with the selected CAL in A0; requires --cal')
+    repair.add_argument('--output', type=Path, help='New dump file; a JSON report is saved alongside it. Omit for preview.')
+
     inspect_cal = sub.add_parser("inspect-cal", help="Inspect a CAL:DATA:ALL payload")
     inspect_cal.add_argument("payload", type=Path)
     inspect_cal.add_argument("--explain", action="store_true", help="Explain known schema45 field meanings and unresolved usage")
@@ -248,6 +259,13 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "inspect-nor":
         _print_json(inspect_nor_file(args.image))
+        return 0
+    if args.command == 'repair-nor':
+        from .nor_repair import plan_repair, save_plan
+        plan = plan_repair(args.target, cal=args.cal, app=args.app, recovery=args.recovery,
+                           order=args.order, donor_order=args.donor_order, model=args.model,
+                           restore_reset=args.restore_reset, overwrite_cal_journal=args.overwrite_cal_journal)
+        _print_json(save_plan(plan, args.output) if args.output else plan.report)
         return 0
     if args.command == "inspect-cal":
         try:
